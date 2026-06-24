@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Menu racine sous Paramètres techniques -->
+    <menuitem id="menu_webhook_root"
+              name="Webhooks"
+              parent="base.menu_administration"
+              sequence="100"/>
+
+    <menuitem id="menu_webhook_endpoint"
+              name="Endpoints"
+              parent="menu_webhook_root"
+              action="action_webhook_endpoint"
+              sequence="10"/>
+
+    <menuitem id="menu_webhook_log"
+              name="Historique"
+              parent="menu_webhook_root"
+              action="action_webhook_log"
+              sequence="20"/>
+
+</odoo>

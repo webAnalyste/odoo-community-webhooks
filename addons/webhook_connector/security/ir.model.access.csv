@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_webhook_endpoint_admin,webhook.endpoint admin,model_webhook_endpoint,base.group_system,1,1,1,1
+access_webhook_endpoint_user,webhook.endpoint user,model_webhook_endpoint,base.group_user,1,0,0,0
+access_webhook_log_admin,webhook.log admin,model_webhook_log,base.group_system,1,1,1,1
+access_webhook_log_user,webhook.log user,model_webhook_log,base.group_user,1,0,0,0

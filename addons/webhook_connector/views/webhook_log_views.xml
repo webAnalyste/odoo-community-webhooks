@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- LISTE -->
+    <record id="webhook_log_view_tree" model="ir.ui.view">
+        <field name="name">webhook.log.tree</field>
+        <field name="model">webhook.log</field>
+        <field name="arch" type="xml">
+            <list string="Historique webhooks"
+                  decoration-danger="not success"
+                  decoration-success="success">
+                <field name="create_date" string="Date"/>
+                <field name="endpoint_id" string="Webhook"/>
+                <field name="action"/>
+                <field name="record_id" string="ID enreg."/>
+                <field name="status_code" string="HTTP"/>
+                <field name="success" string="Succès"/>
+                <field name="response" string="Réponse" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- FORMULAIRE -->
+    <record id="webhook_log_view_form" model="ir.ui.view">
+        <field name="name">webhook.log.form</field>
+        <field name="model">webhook.log</field>
+        <field name="arch" type="xml">
+            <form string="Log webhook" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="create_date" string="Date"/>
+                            <field name="endpoint_id"/>
+                            <field name="action"/>
+                            <field name="record_id"/>
+                        </group>
+                        <group>
+                            <field name="status_code"/>
+                            <field name="success"/>
+                        </group>
+                    </group>
+                    <group string="Payload envoyé">
+                        <field name="payload" widget="code" nolabel="1"/>
+                    </group>
+                    <group string="Réponse reçue">
+                        <field name="response" widget="code" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ACTION FENÊTRE -->
+    <record id="action_webhook_log" model="ir.actions.act_window">
+        <field name="name">Historique webhooks</field>
+        <field name="res_model">webhook.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,19 @@
+# Système
+.DS_Store
+**/.DS_Store
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Fichiers sensibles
+banque-releves/
+coolify-backup_accessKeys.csv
+imports/sources/
+imports/archives/
+
+# Scripts d'import one-shot (données métier)
+imports/
+
+# Odoo runtime
+*.log
