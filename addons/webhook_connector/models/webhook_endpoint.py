@@ -75,7 +75,7 @@ class WebhookEndpoint(models.Model):
     def _build_headers(self):
         headers = {'Content-Type': 'application/json'}
         if self.secret_token:
-            headers['X-Webhook-Token'] = self.secret_token
+            headers['Authorization'] = 'Bearer %s' % self.secret_token
         return headers
 
     def _build_payload(self, record, action):
