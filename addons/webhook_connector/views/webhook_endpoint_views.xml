@@ -40,7 +40,7 @@
                         </button>
                     </div>
                     <widget name="web_ribbon" title="Inactif" bg_color="bg-danger"
-                            attrs="{'invisible': [('active', '=', True)]}"/>
+                            invisible="active"/>
                     <field name="active" invisible="1"/>
                     <group>
                         <group string="Identification">
