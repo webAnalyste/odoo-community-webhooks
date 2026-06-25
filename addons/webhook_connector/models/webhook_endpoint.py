@@ -80,6 +80,11 @@ class WebhookEndpoint(models.Model):
 
     def _build_payload(self, record, action):
         """Construit le payload JSON envoyé au webhook."""
+        # Pour les vrais records Odoo, on force un refresh pour garantir les données à jour
+        is_real_record = hasattr(record, '_name')
+        if is_real_record:
+            record.invalidate_recordset()
+
         payload = {
             'action': action,
             'model': self.odoo_model,
@@ -201,7 +206,7 @@ class WebhookEndpoint(models.Model):
             'type': 'ir.actions.act_window',
             'name': 'Historique — %s' % self.name,
             'res_model': 'webhook.log',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('endpoint_id', '=', self.id)],
             'context': {'default_endpoint_id': self.id},
         }
