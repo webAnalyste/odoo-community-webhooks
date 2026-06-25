@@ -51,7 +51,7 @@ class WebhookEndpoint(models.Model):
     )
     secret_token = fields.Char(
         string='Token secret',
-        help='Envoyé dans le header X-Webhook-Token',
+        help='Envoyé dans le header Authorization: Bearer <token>',
     )
     timeout = fields.Integer(
         string='Timeout (secondes)',

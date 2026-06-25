@@ -60,7 +60,7 @@
                         </group>
                         <group string="Sécurité">
                             <field name="secret_token" password="True"
-                                   placeholder="Optionnel — envoyé dans X-Webhook-Token"/>
+                                   placeholder="Optionnel — envoyé dans Authorization: Bearer &lt;token&gt;"/>
                         </group>
                     </group>
                     <notebook>
