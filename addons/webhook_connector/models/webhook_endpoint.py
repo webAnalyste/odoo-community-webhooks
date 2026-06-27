@@ -130,6 +130,22 @@ class WebhookEndpoint(models.Model):
                         code = line.product_id.default_code
                         if code and code not in product_codes:
                             product_codes.append(code)
+            # Contacts de l'entreprise avec leurs étiquettes
+            contacts = []
+            if is_real_record and record.partner_id:
+                partner = record.partner_id
+                # Si c'est un contact (enfant), on remonte à la société
+                if partner.parent_id:
+                    partner = partner.parent_id
+                for child in partner.child_ids.filtered(lambda c: c.type == 'contact'):
+                    contacts.append({
+                        'id': child.id,
+                        'name': child.display_name,
+                        'email': child.email,
+                        'phone': child.phone or child.mobile,
+                        'job_position': child.function,
+                        'tags': [{'id': t.id, 'name': t.name} for t in child.category_id],
+                    })
             payload.update({
                 'name': record.name,
                 'stage_id': record.stage_id.id,
@@ -140,6 +156,7 @@ class WebhookEndpoint(models.Model):
                 'probability': record.probability,
                 'description': html2plaintext(record.description) if record.description else None,
                 'product_codes': product_codes,
+                'contacts': contacts,
             })
         return payload
 

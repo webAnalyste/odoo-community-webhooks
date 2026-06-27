@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Ajout du champ étiquettes dans la modale contact (vue inline partenaire) -->
+    <record id="view_partner_address_form_tags" model="ir.ui.view">
+        <field name="name">res.partner.address.form.tags</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_address_form"/>
+        <field name="arch" type="xml">
+            <field name="comment" position="before">
+                <field name="category_id" widget="many2many_tags"
+                       options="{'color_field': 'color'}"
+                       string="Étiquettes"/>
+            </field>
+        </field>
+    </record>
+</odoo>
