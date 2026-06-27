@@ -2,6 +2,7 @@ import json
 import logging
 import requests
 from odoo import api, fields, models
+from odoo.tools import html2plaintext
 
 _logger = logging.getLogger(__name__)
 
@@ -129,7 +130,7 @@ class WebhookEndpoint(models.Model):
                 'partner_name': record.partner_id.display_name if record.partner_id else None,
                 'expected_revenue': record.expected_revenue,
                 'probability': record.probability,
-                'description': record.description,
+                'description': html2plaintext(record.description) if record.description else None,
             })
         return payload
 
