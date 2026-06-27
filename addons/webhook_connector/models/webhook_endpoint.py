@@ -122,6 +122,14 @@ class WebhookEndpoint(models.Model):
                 'date_order': str(record.date_order) if record.date_order else None,
             })
         elif self.odoo_model == 'crm.lead':
+            # Codes produits depuis les devis liés (order_ids)
+            product_codes = []
+            if is_real_record and hasattr(record, 'order_ids'):
+                for order in record.order_ids:
+                    for line in order.order_line:
+                        code = line.product_id.default_code
+                        if code and code not in product_codes:
+                            product_codes.append(code)
             payload.update({
                 'name': record.name,
                 'stage_id': record.stage_id.id,
@@ -131,6 +139,7 @@ class WebhookEndpoint(models.Model):
                 'expected_revenue': record.expected_revenue,
                 'probability': record.probability,
                 'description': html2plaintext(record.description) if record.description else None,
+                'product_codes': product_codes,
             })
         return payload
 
@@ -190,6 +199,7 @@ class WebhookEndpoint(models.Model):
             expected_revenue = 0.0
             probability = 0.0
             description = None
+            order_ids = []
 
         self.fire(FakeRecord(), 'test')
         return {
