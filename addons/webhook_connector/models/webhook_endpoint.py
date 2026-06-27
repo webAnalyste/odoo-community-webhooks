@@ -140,7 +140,7 @@ class WebhookEndpoint(models.Model):
                 for child in partner.child_ids.filtered(lambda c: c.type == 'contact'):
                     contacts.append({
                         'id': child.id,
-                        'name': child.display_name,
+                        'name': child.name,
                         'email': child.email,
                         'phone': child.phone or child.mobile,
                         'job_position': child.function,
