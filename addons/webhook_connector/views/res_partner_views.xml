@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Ajout du champ étiquettes dans la modale contact (vue inline partenaire) -->
-    <record id="view_partner_address_form_tags" model="ir.ui.view">
-        <field name="name">res.partner.address.form.tags</field>
+    <!-- Ajout du champ étiquettes dans la modale contact (vue formulaire partenaire) -->
+    <!-- La modale "Ouvrir: Contact" utilise view_partner_form, category_id existe
+         mais est invisible dans le dialog — on le force visible pour type=contact -->
+    <record id="view_partner_form_tags_visible" model="ir.ui.view">
+        <field name="name">res.partner.form.tags.visible</field>
         <field name="model">res.partner</field>
-        <field name="inherit_id" ref="base.view_partner_address_form"/>
+        <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
-            <field name="comment" position="before">
-                <field name="category_id" widget="many2many_tags"
-                       options="{'color_field': 'color'}"
-                       string="Étiquettes"/>
+            <field name="category_id" position="attributes">
+                <attribute name="invisible">False</attribute>
             </field>
         </field>
     </record>
