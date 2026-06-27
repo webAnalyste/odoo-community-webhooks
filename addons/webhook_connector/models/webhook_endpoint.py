@@ -129,6 +129,7 @@ class WebhookEndpoint(models.Model):
                 'partner_name': record.partner_id.display_name if record.partner_id else None,
                 'expected_revenue': record.expected_revenue,
                 'probability': record.probability,
+                'description': record.description,
             })
         return payload
 
@@ -187,6 +188,7 @@ class WebhookEndpoint(models.Model):
             stage_id = type('s', (), {'id': 0, 'name': '[TEST]'})()
             expected_revenue = 0.0
             probability = 0.0
+            description = None
 
         self.fire(FakeRecord(), 'test')
         return {
