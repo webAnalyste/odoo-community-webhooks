@@ -156,6 +156,9 @@ class WebhookEndpoint(models.Model):
                 'probability': record.probability,
                 'description': html2plaintext(record.description) if record.description else None,
                 'product_codes': product_codes,
+                'x_contact_id': record.x_contact_id.id if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
+                'x_contact_name': record.x_contact_id.name if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
+                'x_contact_email': record.x_contact_id.email if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
                 'contacts': contacts,
             })
         return payload

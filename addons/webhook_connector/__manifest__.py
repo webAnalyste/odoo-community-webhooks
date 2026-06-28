@@ -11,6 +11,7 @@
         'views/webhook_endpoint_views.xml',
         'views/webhook_log_views.xml',
         'views/res_partner_views.xml',
+        'views/crm_lead_views.xml',
         'views/menu.xml',
     ],
     'installable': True,
