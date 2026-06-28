@@ -159,6 +159,7 @@ class WebhookEndpoint(models.Model):
                 'x_contact_id': record.x_contact_id.id if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
                 'x_contact_name': record.x_contact_id.name if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
                 'x_contact_email': record.x_contact_id.email if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
+                'x_contact_tags': [t.name for t in record.x_contact_id.category_id] if hasattr(record, 'x_contact_id') and record.x_contact_id else [],
                 'contacts': contacts,
             })
         return payload
