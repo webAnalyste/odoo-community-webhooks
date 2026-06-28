@@ -11,6 +11,7 @@
                        string="Contact client"
                        options="{'no_create': True}"
                        placeholder="Sélectionner un contact..."/>
+                <field name="x_participants" string="Nombre de participants"/>
             </xpath>
         </field>
     </record>

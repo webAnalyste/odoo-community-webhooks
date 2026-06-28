@@ -7,6 +7,8 @@ _MODEL = 'crm.lead'
 class CrmLead(models.Model):
     _inherit = 'crm.lead'
 
+    x_participants = fields.Integer(string='Nombre de participants')
+
     x_contact_id = fields.Many2one(
         comodel_name='res.partner',
         string='Contact client',
