@@ -8,8 +8,8 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     def _get_name(self):
-        """Overrides display name : si contexte x_contact_id, n'affiche pas la société."""
-        if self.env.context.get('x_contact_id_display'):
+        """Pour les contacts enfants (type=contact), affiche nom [tags] sans préfixe société."""
+        if self.type == 'contact' and self.parent_id and not self.is_company:
             name = self.name or ''
             tags = ', '.join(self.category_id.mapped('name'))
             return '%s [%s]' % (name, tags) if tags else name

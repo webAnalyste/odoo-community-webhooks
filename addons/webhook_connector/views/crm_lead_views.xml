@@ -10,8 +10,7 @@
                 <field name="x_contact_id"
                        string="Contact client"
                        options="{'no_create': True, 'no_open': True}"
-                       context="{'x_contact_id_display': True}"
-                       placeholder="Sélectionner un contact..."/>
+placeholder="Sélectionner un contact..."/>
             </label>
         </field>
     </record>
