@@ -7,17 +7,10 @@
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//group[@name='opportunity_partner']/field[@name='partner_id']" position="after">
-                <label for="x_contact_id"/>
-                <div class="o_row">
-                    <field name="x_contact_id"
-                           options="{'no_create': True}"
-                           placeholder="Sélectionner un contact..."/>
-                    <button name="%(base.action_partner_form)d"
-                            type="action"
-                            class="btn btn-link fa fa-external-link ps-1"
-                            invisible="not x_contact_id"
-                            context="{'res_id': x_contact_id}"/>
-                </div>
+                <field name="x_contact_id"
+                       string="Contact client"
+                       options="{'no_create': True}"
+                       placeholder="Sélectionner un contact..."/>
             </xpath>
         </field>
     </record>

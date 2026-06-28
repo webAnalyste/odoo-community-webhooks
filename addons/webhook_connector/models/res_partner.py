@@ -7,6 +7,14 @@ _MODEL = 'res.partner'
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
+    def _compute_display_name(self):
+        for partner in self:
+            if partner.type == 'contact' and partner.parent_id and not partner.is_company:
+                tags = ', '.join(partner.category_id.mapped('name'))
+                partner.display_name = '%s [%s]' % (partner.name or '', tags) if tags else (partner.name or '')
+            else:
+                super(ResPartner, partner)._compute_display_name()
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
