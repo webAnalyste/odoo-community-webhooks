@@ -7,14 +7,6 @@ _MODEL = 'res.partner'
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    def _get_name(self):
-        """Pour les contacts enfants (type=contact), affiche nom [tags] sans préfixe société."""
-        if self.type == 'contact' and self.parent_id and not self.is_company:
-            name = self.name or ''
-            tags = ', '.join(self.category_id.mapped('name'))
-            return '%s [%s]' % (name, tags) if tags else name
-        return super()._get_name()
-
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)

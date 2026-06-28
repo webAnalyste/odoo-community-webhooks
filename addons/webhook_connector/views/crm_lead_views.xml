@@ -9,8 +9,8 @@
             <label for="email_from" position="before">
                 <field name="x_contact_id"
                        string="Contact client"
-                       options="{'no_create': True, 'no_open': True}"
-placeholder="Sélectionner un contact..."/>
+                       options="{'no_create': True}"
+                       placeholder="Sélectionner un contact..."/>
             </label>
         </field>
     </record>
