@@ -69,6 +69,18 @@ class WebhookEndpoint(models.Model):
         string='Équipes autorisées',
         help='Laisser vide = toutes les équipes. Si rempli, le webhook ne se déclenche que pour ces équipes.',
     )
+    crm_stage_domain = fields.Char(
+        compute='_compute_crm_stage_domain',
+        store=False,
+    )
+
+    @api.depends('crm_team_ids')
+    def _compute_crm_stage_domain(self):
+        for rec in self:
+            if rec.crm_team_ids:
+                rec.crm_stage_domain = "[('team_id', 'in', %s)]" % rec.crm_team_ids.ids
+            else:
+                rec.crm_stage_domain = "[]"
 
     # Blocs de données CRM (visibles uniquement si modèle = crm.lead)
     crm_include_description = fields.Boolean(string='Notes internes', default=True)

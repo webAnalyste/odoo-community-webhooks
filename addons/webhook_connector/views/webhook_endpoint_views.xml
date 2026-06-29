@@ -67,9 +67,10 @@
                         <page string="Paramètres CRM"
                               invisible="odoo_model != 'crm.lead'">
                             <group string="Filtres de déclenchement">
+                                <field name="crm_stage_domain" invisible="1"/>
                                 <field name="crm_stage_ids" widget="many2many_tags"
                                        placeholder="Toutes les étapes"
-                                       domain="[('team_id', 'in', crm_team_ids)] if crm_team_ids else []"/>
+                                       domain="crm_stage_domain"/>
                                 <field name="crm_team_ids" widget="many2many_tags"
                                        placeholder="Toutes les équipes"/>
                             </group>
