@@ -64,6 +64,17 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Données incluses (CRM)"
+                              invisible="odoo_model != 'crm.lead'">
+                            <group string="Blocs de données envoyés dans le payload">
+                                <field name="crm_include_description"/>
+                                <field name="crm_include_x_contact"/>
+                                <field name="crm_include_participants"/>
+                                <field name="crm_include_product_codes"/>
+                                <field name="crm_include_orders"/>
+                                <field name="crm_include_contacts"/>
+                            </group>
+                        </page>
                         <page string="Historique des appels">
                             <field name="log_ids" readonly="1">
                                 <list decoration-danger="not success"

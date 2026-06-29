@@ -58,6 +58,14 @@ class WebhookEndpoint(models.Model):
         string='Timeout (secondes)',
         default=10,
     )
+    # Blocs de données CRM (visibles uniquement si modèle = crm.lead)
+    crm_include_description = fields.Boolean(string='Notes internes', default=True)
+    crm_include_contacts = fields.Boolean(string='Contacts de l\'entreprise', default=True)
+    crm_include_orders = fields.Boolean(string='Devis (orders, PDF, lien portail)', default=True)
+    crm_include_product_codes = fields.Boolean(string='Codes produits', default=True)
+    crm_include_x_contact = fields.Boolean(string='Contact client (x_contact_id)', default=True)
+    crm_include_participants = fields.Boolean(string='Nombre de participants', default=True)
+
     log_ids = fields.One2many(
         comodel_name='webhook.log',
         inverse_name='endpoint_id',
@@ -122,32 +130,67 @@ class WebhookEndpoint(models.Model):
                 'date_order': str(record.date_order) if record.date_order else None,
             })
         elif self.odoo_model == 'crm.lead':
-            # Devis liés à l'opportunité
-            product_codes = []
-            orders = []
-            if is_real_record and hasattr(record, 'order_ids'):
-                for order in record.order_ids:
-                    for line in order.order_line:
-                        code = line.product_id.default_code
-                        if code and code not in product_codes:
-                            product_codes.append(code)
-                    orders.append({
-                        'id': order.id,
-                        'name': order.name,
-                        'state': order.state,
-                        'amount_total': order.amount_total,
-                        'date_order': str(order.date_order) if order.date_order else None,
-                        'validity_date': str(order.validity_date) if order.validity_date else None,
-                        'portal_url': 'https://odoo.webanalyste.com/my/orders/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
-                        'pdf_url': 'https://odoo.webanalyste.com/report/pdf/sale.report_saleorder/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
-                    })
-            # Contacts de l'entreprise avec leurs étiquettes
-            contacts = []
-            if is_real_record and record.partner_id:
+            # Base toujours incluse
+            payload.update({
+                'name': record.name,
+                'stage_id': record.stage_id.id,
+                'stage_name': record.stage_id.name,
+                'partner_id': record.partner_id.id if record.partner_id else None,
+                'partner_name': record.partner_id.display_name if record.partner_id else None,
+                'expected_revenue': record.expected_revenue,
+                'probability': record.probability,
+            })
+
+            # Notes internes
+            if self.crm_include_description:
+                payload['description'] = html2plaintext(record.description) if record.description else None
+
+            # Codes produits + devis
+            if self.crm_include_product_codes or self.crm_include_orders:
+                product_codes = []
+                orders = []
+                if is_real_record and hasattr(record, 'order_ids'):
+                    for order in record.order_ids:
+                        if self.crm_include_product_codes:
+                            for line in order.order_line:
+                                code = line.product_id.default_code
+                                if code and code not in product_codes:
+                                    product_codes.append(code)
+                        if self.crm_include_orders:
+                            orders.append({
+                                'id': order.id,
+                                'name': order.name,
+                                'state': order.state,
+                                'amount_total': order.amount_total,
+                                'date_order': str(order.date_order) if order.date_order else None,
+                                'validity_date': str(order.validity_date) if order.validity_date else None,
+                                'portal_url': 'https://odoo.webanalyste.com/my/orders/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
+                                'pdf_url': 'https://odoo.webanalyste.com/report/pdf/sale.report_saleorder/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
+                            })
+                if self.crm_include_product_codes:
+                    payload['product_codes'] = product_codes
+                if self.crm_include_orders:
+                    payload['orders'] = orders
+
+            # Contact client
+            if self.crm_include_x_contact and hasattr(record, 'x_contact_id'):
+                payload.update({
+                    'x_contact_id': record.x_contact_id.id if record.x_contact_id else None,
+                    'x_contact_name': record.x_contact_id.name if record.x_contact_id else None,
+                    'x_contact_email': record.x_contact_id.email if record.x_contact_id else None,
+                    'x_contact_tags': [t.name for t in record.x_contact_id.category_id] if record.x_contact_id else [],
+                })
+
+            # Nombre de participants
+            if self.crm_include_participants and hasattr(record, 'x_participants'):
+                payload['x_participants'] = record.x_participants
+
+            # Contacts de l'entreprise
+            if self.crm_include_contacts and is_real_record and record.partner_id:
                 partner = record.partner_id
-                # Si c'est un contact (enfant), on remonte à la société
                 if partner.parent_id:
                     partner = partner.parent_id
+                contacts = []
                 for child in partner.child_ids.filtered(lambda c: c.type == 'contact'):
                     contacts.append({
                         'id': child.id,
@@ -157,24 +200,7 @@ class WebhookEndpoint(models.Model):
                         'job_position': child.function,
                         'tags': [{'id': t.id, 'name': t.name} for t in child.category_id],
                     })
-            payload.update({
-                'name': record.name,
-                'stage_id': record.stage_id.id,
-                'stage_name': record.stage_id.name,
-                'partner_id': record.partner_id.id if record.partner_id else None,
-                'partner_name': record.partner_id.display_name if record.partner_id else None,
-                'expected_revenue': record.expected_revenue,
-                'probability': record.probability,
-                'description': html2plaintext(record.description) if record.description else None,
-                'product_codes': product_codes,
-                'orders': orders,
-                'x_contact_id': record.x_contact_id.id if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
-                'x_contact_name': record.x_contact_id.name if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
-                'x_contact_email': record.x_contact_id.email if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
-                'x_contact_tags': [t.name for t in record.x_contact_id.category_id] if hasattr(record, 'x_contact_id') and record.x_contact_id else [],
-                'x_participants': record.x_participants if hasattr(record, 'x_participants') else 0,
-                'contacts': contacts,
-            })
+                payload['contacts'] = contacts
         return payload
 
     def fire(self, record, action):
