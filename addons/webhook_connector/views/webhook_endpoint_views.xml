@@ -64,8 +64,14 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Données incluses (CRM)"
+                        <page string="Paramètres CRM"
                               invisible="odoo_model != 'crm.lead'">
+                            <group string="Filtres de déclenchement">
+                                <field name="crm_stage_ids" widget="many2many_tags"
+                                       placeholder="Toutes les étapes"/>
+                                <field name="crm_team_ids" widget="many2many_tags"
+                                       placeholder="Toutes les équipes"/>
+                            </group>
                             <group string="Blocs de données envoyés dans le payload">
                                 <field name="crm_include_description"/>
                                 <field name="crm_include_x_contact"/>

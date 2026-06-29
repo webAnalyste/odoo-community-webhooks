@@ -58,6 +58,18 @@ class WebhookEndpoint(models.Model):
         string='Timeout (secondes)',
         default=10,
     )
+    # Filtres de déclenchement CRM
+    crm_stage_ids = fields.Many2many(
+        comodel_name='crm.stage',
+        string='Étapes autorisées',
+        help='Laisser vide = toutes les étapes. Si rempli, le webhook ne se déclenche que pour ces étapes.',
+    )
+    crm_team_ids = fields.Many2many(
+        comodel_name='crm.team',
+        string='Équipes autorisées',
+        help='Laisser vide = toutes les équipes. Si rempli, le webhook ne se déclenche que pour ces équipes.',
+    )
+
     # Blocs de données CRM (visibles uniquement si modèle = crm.lead)
     crm_include_description = fields.Boolean(string='Notes internes', default=True)
     crm_include_contacts = fields.Boolean(string='Contacts de l\'entreprise', default=True)
@@ -135,6 +147,8 @@ class WebhookEndpoint(models.Model):
                 'name': record.name,
                 'stage_id': record.stage_id.id,
                 'stage_name': record.stage_id.name,
+                'team_id': record.team_id.id if record.team_id else None,
+                'team_name': record.team_id.name if record.team_id else None,
                 'partner_id': record.partner_id.id if record.partner_id else None,
                 'partner_name': record.partner_id.display_name if record.partner_id else None,
                 'expected_revenue': record.expected_revenue,
@@ -203,10 +217,24 @@ class WebhookEndpoint(models.Model):
                 payload['contacts'] = contacts
         return payload
 
+    def _crm_filter_matches(self, record):
+        """Vérifie que l'opportunité correspond aux filtres étape/équipe."""
+        if self.odoo_model != 'crm.lead':
+            return True
+        if not hasattr(record, '_name'):
+            return True  # FakeRecord → toujours passer
+        if self.crm_stage_ids and record.stage_id not in self.crm_stage_ids:
+            return False
+        if self.crm_team_ids and record.team_id not in self.crm_team_ids:
+            return False
+        return True
+
     def fire(self, record, action):
         """Appelle le webhook et enregistre le log."""
         self.ensure_one()
         if not self.active:
+            return
+        if not self._crm_filter_matches(record):
             return
         payload = self._build_payload(record, action)
         payload_str = json.dumps(payload, default=str)
