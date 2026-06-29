@@ -139,6 +139,7 @@ class WebhookEndpoint(models.Model):
                         'date_order': str(order.date_order) if order.date_order else None,
                         'validity_date': str(order.validity_date) if order.validity_date else None,
                         'portal_url': 'https://odoo.webanalyste.com/my/orders/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
+                        'pdf_url': 'https://odoo.webanalyste.com/report/pdf/sale.report_saleorder/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
                     })
             # Contacts de l'entreprise avec leurs étiquettes
             contacts = []
