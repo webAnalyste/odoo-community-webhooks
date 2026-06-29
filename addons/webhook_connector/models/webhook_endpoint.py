@@ -122,14 +122,24 @@ class WebhookEndpoint(models.Model):
                 'date_order': str(record.date_order) if record.date_order else None,
             })
         elif self.odoo_model == 'crm.lead':
-            # Codes produits depuis les devis liés (order_ids)
+            # Devis liés à l'opportunité
             product_codes = []
+            orders = []
             if is_real_record and hasattr(record, 'order_ids'):
                 for order in record.order_ids:
                     for line in order.order_line:
                         code = line.product_id.default_code
                         if code and code not in product_codes:
                             product_codes.append(code)
+                    orders.append({
+                        'id': order.id,
+                        'name': order.name,
+                        'state': order.state,
+                        'amount_total': order.amount_total,
+                        'date_order': str(order.date_order) if order.date_order else None,
+                        'validity_date': str(order.validity_date) if order.validity_date else None,
+                        'signature_url': '/odoo/sign/%s' % order.id if order.state == 'sent' else None,
+                    })
             # Contacts de l'entreprise avec leurs étiquettes
             contacts = []
             if is_real_record and record.partner_id:
@@ -156,6 +166,7 @@ class WebhookEndpoint(models.Model):
                 'probability': record.probability,
                 'description': html2plaintext(record.description) if record.description else None,
                 'product_codes': product_codes,
+                'orders': orders,
                 'x_contact_id': record.x_contact_id.id if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
                 'x_contact_name': record.x_contact_id.name if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
                 'x_contact_email': record.x_contact_id.email if hasattr(record, 'x_contact_id') and record.x_contact_id else None,
