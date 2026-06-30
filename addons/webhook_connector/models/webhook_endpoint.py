@@ -183,6 +183,15 @@ class WebhookEndpoint(models.Model):
                                 if code and code not in product_codes:
                                     product_codes.append(code)
                         if self.crm_include_orders:
+                            token = order._portal_ensure_token()
+                            # Générer le PDF en base64
+                            try:
+                                pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+                                    'sale.report_saleorder', order.ids)
+                                import base64
+                                pdf_b64 = base64.b64encode(pdf_content).decode('utf-8')
+                            except Exception:
+                                pdf_b64 = None
                             orders.append({
                                 'id': order.id,
                                 'name': order.name,
@@ -190,8 +199,10 @@ class WebhookEndpoint(models.Model):
                                 'amount_total': order.amount_total,
                                 'date_order': str(order.date_order) if order.date_order else None,
                                 'validity_date': str(order.validity_date) if order.validity_date else None,
-                                'portal_url': 'https://odoo.webanalyste.com/my/orders/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
-                                'pdf_url': 'https://odoo.webanalyste.com/report/pdf/sale.report_saleorder/%s?access_token=%s' % (order.id, order._portal_ensure_token()),
+                                'portal_url': 'https://odoo.webanalyste.com/my/orders/%s?access_token=%s' % (order.id, token),
+                                'pdf_url': 'https://odoo.webanalyste.com/report/pdf/sale.report_saleorder/%s?access_token=%s' % (order.id, token),
+                                'pdf_base64': pdf_b64,
+                                'pdf_filename': '%s.pdf' % order.name,
                             })
                 if self.crm_include_product_codes:
                     payload['product_codes'] = product_codes
