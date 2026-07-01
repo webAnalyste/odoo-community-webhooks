@@ -80,6 +80,7 @@
                                 <field name="crm_include_participants"/>
                                 <field name="crm_include_product_codes"/>
                                 <field name="crm_include_orders"/>
+                                <field name="crm_include_pdf" invisible="not crm_include_orders"/>
                                 <field name="crm_include_contacts"/>
                             </group>
                         </page>

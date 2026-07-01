@@ -85,7 +85,8 @@ class WebhookEndpoint(models.Model):
     # Blocs de données CRM (visibles uniquement si modèle = crm.lead)
     crm_include_description = fields.Boolean(string='Notes internes', default=True)
     crm_include_contacts = fields.Boolean(string='Contacts de l\'entreprise', default=True)
-    crm_include_orders = fields.Boolean(string='Devis (orders, PDF, lien portail)', default=True)
+    crm_include_orders = fields.Boolean(string='Devis (infos, liens portail)', default=True)
+    crm_include_pdf = fields.Boolean(string='Devis PDF binaire (base64)', default=False)
     crm_include_product_codes = fields.Boolean(string='Codes produits', default=True)
     crm_include_x_contact = fields.Boolean(string='Contact client (x_contact_id)', default=True)
     crm_include_participants = fields.Boolean(string='Nombre de participants', default=True)
@@ -184,15 +185,7 @@ class WebhookEndpoint(models.Model):
                                     product_codes.append(code)
                         if self.crm_include_orders:
                             token = order._portal_ensure_token()
-                            # Générer le PDF en base64
-                            try:
-                                pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
-                                    'sale.report_saleorder', order.ids)
-                                import base64
-                                pdf_b64 = base64.b64encode(pdf_content).decode('utf-8')
-                            except Exception:
-                                pdf_b64 = None
-                            orders.append({
+                            order_data = {
                                 'id': order.id,
                                 'name': order.name,
                                 'state': order.state,
@@ -201,9 +194,18 @@ class WebhookEndpoint(models.Model):
                                 'validity_date': str(order.validity_date) if order.validity_date else None,
                                 'portal_url': 'https://odoo.webanalyste.com/my/orders/%s?access_token=%s' % (order.id, token),
                                 'pdf_url': 'https://odoo.webanalyste.com/report/pdf/sale.report_saleorder/%s?access_token=%s' % (order.id, token),
-                                'pdf_base64': pdf_b64,
-                                'pdf_filename': '%s.pdf' % order.name,
-                            })
+                            }
+                            if self.crm_include_pdf:
+                                try:
+                                    import base64
+                                    pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(
+                                        'sale.report_saleorder', order.ids)
+                                    order_data['pdf_base64'] = base64.b64encode(pdf_content).decode('utf-8')
+                                    order_data['pdf_filename'] = '%s.pdf' % order.name
+                                except Exception:
+                                    order_data['pdf_base64'] = None
+                                    order_data['pdf_filename'] = None
+                            orders.append(order_data)
                 if self.crm_include_product_codes:
                     payload['product_codes'] = product_codes
                 if self.crm_include_orders:
