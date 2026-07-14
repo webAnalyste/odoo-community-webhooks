@@ -1,5 +1,5 @@
 from odoo import http
-from odoo.http import request, Response
+from odoo.http import Response
 
 
 class RestApiDocController(http.Controller):
@@ -42,8 +42,7 @@ code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; font-size: 13p
 </head>
 <body>
 <h1>REST API Connector \u2014 G\xe9n\xe9rateur de requ\xeates</h1>
-<p>G\xe9n\xe8re des commandes curl pour l\u2019API REST Odoo.</p>
-<div class="warn"><strong>Cl\xe9 API :</strong> Param\xe8tres \u2192 Technique \u2192 Param\xe8tres syst\xe8me \u2192 <code>rest_api_connector.api_key</code></div>
+<p>Compose l\u2019URL de la requ\xeate \xe0 utiliser dans votre client HTTP (n8n, Postman, curl...). L\u2019authentification (header <code>X-API-Key</code>) est \xe0 g\xe9rer s\xe9par\xe9ment (ex: credential n8n).</p>
 
 <h2>G\xe9n\xe9rateur</h2>
 <div class="box">
@@ -61,14 +60,9 @@ code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; font-size: 13p
       <select id="gen-method" onchange="genUpdate()">
         <option value="GET">GET \u2014 Lister / Chercher</option>
         <option value="GET_ID">GET /{id} \u2014 D\xe9tail</option>
-        <option value="POST">POST \u2014 Cr\xe9er</option>
         <option value="PUT">PUT /{id} \u2014 Mettre \xe0 jour</option>
         <option value="DELETE">DELETE /{id} \u2014 Archiver</option>
       </select>
-    </div>
-    <div>
-      <label>Cl\xe9 API</label>
-      <input type="text" id="gen-key" value="rac_Kj9mX2pL7vQnR4wT8yF3dH6bN1sE5uA0" oninput="genUpdate()">
     </div>
   </div>
 
@@ -87,13 +81,7 @@ code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; font-size: 13p
     <input type="number" id="gen-id" placeholder="ex: 42" style="max-width:150px;" oninput="genUpdate()">
   </div>
 
-  <div id="gen-body-section" style="display:none;margin-bottom:16px;">
-    <label>Corps JSON</label>
-    <textarea id="gen-body" rows="10" oninput="genUpdate()" placeholder='{"name": "Ma Soci\xe9t\xe9"}'></textarea>
-    <button class="btn-preset" id="gen-preset-btn" onclick="loadPreset()">Charger exemple</button>
-  </div>
-
-  <label>Requ\xeate g\xe9n\xe9r\xe9e</label>
+  <label>URL g\xe9n\xe9r\xe9e</label>
   <div class="pre-wrap">
     <pre id="gen-output"></pre>
     <button class="btn-copy" onclick="copyGen()" id="copy-btn">\U0001f4cb Copier</button>
@@ -168,20 +156,6 @@ code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; font-size: 13p
 
 <script>
 var BASE = 'https://odoo.webanalyste.com';
-var PRESETS = {
-  companies: {
-    POST: '{\\n  "name": "Ma Soci\\u00e9t\\u00e9",\\n  "email": "contact@masociete.fr",\\n  "phone": "01 23 45 67 89",\\n  "city": "Paris",\\n  "zip": "75001",\\n  "country_id": 75\\n}',
-    PUT:  '{\\n  "phone": "01 99 88 77 66",\\n  "website": "https://masociete.fr"\\n}'
-  },
-  contacts: {
-    POST: '{\\n  "name": "Jean Dupont",\\n  "email": "jean.dupont@masociete.fr",\\n  "phone": "06 12 34 56 78",\\n  "function": "Directeur Commercial",\\n  "parent_id": 42,\\n  "type": "contact"\\n}',
-    PUT:  '{\\n  "email": "nouveau@email.fr",\\n  "mobile": "07 98 76 54 32"\\n}'
-  },
-  'crm/leads': {
-    POST: '{\\n  "name": "Formation React - Ma Soci\\u00e9t\\u00e9",\\n  "partner_id": 42,\\n  "stage_id": 1,\\n  "expected_revenue": 3500.0,\\n  "x_participants": 8,\\n  "x_date_debut": "2026-09-15",\\n  "x_nb_heures": 35.0\\n}',
-    PUT:  '{\\n  "stage_id": 4,\\n  "expected_revenue": 4200.0,\\n  "probability": 80\\n}'
-  }
-};
 
 function addFilter() {
   var c = document.getElementById('gen-filters');
@@ -196,26 +170,15 @@ function addFilter() {
   c.appendChild(row); genUpdate();
 }
 
-function loadPreset() {
-  var r=document.getElementById('gen-resource').value, m=document.getElementById('gen-method').value;
-  var p=(PRESETS[r]||{})[m]||'';
-  if(p){document.getElementById('gen-body').value=JSON.parse('"'+p+'"');genUpdate();}
-}
-
 function genUpdate() {
   var resource=document.getElementById('gen-resource').value;
   var method=document.getElementById('gen-method').value;
-  var key=document.getElementById('gen-key').value.trim()||'VOTRE_CLE';
-  var isGet=method==='GET', isGetId=method==='GET_ID', isPost=method==='POST', isPut=method==='PUT', isDel=method==='DELETE';
+  var isGet=method==='GET', isGetId=method==='GET_ID', isPut=method==='PUT', isDel=method==='DELETE';
   document.getElementById('gen-filters-section').style.display=isGet?'':'none';
   document.getElementById('gen-id-section').style.display=(isGetId||isPut||isDel)?'':'none';
-  document.getElementById('gen-body-section').style.display=(isPost||isPut)?'':'none';
-  var pb=document.getElementById('gen-preset-btn');
-  pb.style.display=((isPost||isPut)&&(PRESETS[resource]||{})[method])?'':'none';
   var id=(document.getElementById('gen-id').value||'').trim();
   var limit=document.getElementById('gen-limit').value;
   var offset=document.getElementById('gen-offset').value;
-  var httpMethod=isGetId?'GET':method;
   var url=BASE+'/api/v1/'+resource;
   if(isGetId||isPut||isDel) url+='/'+(id||'{id}');
   var params=[];
@@ -230,18 +193,11 @@ function genUpdate() {
     if(offset&&parseInt(offset)!==0) params.push('offset='+offset);
     if(params.length) url+='?'+params.join('&');
   }
-  var body=(isPost||isPut)?(document.getElementById('gen-body').value||'').trim():'';
-  var lines=['curl -s \\\\'];
-  lines.push('  -H "X-API-Key: '+key+'" \\\\');
-  if(httpMethod!=='GET') lines.push('  -X '+httpMethod+' \\\\');
-  if(body) lines.push('  -H "Content-Type: application/json" \\\\');
-  if(body) lines.push("  -d '"+body+"' \\\\");
-  lines.push('  "'+url+'" | jq');
-  document.getElementById('gen-output').textContent=lines.join('\\n');
+  document.getElementById('gen-output').textContent=url;
 }
 
 function copyGen(){
-  var text=document.getElementById('gen-output').textContent.replace(/\\\\\\\\/g,'\\\\');
+  var text=document.getElementById('gen-output').textContent;
   navigator.clipboard.writeText(text).then(function(){
     var b=document.getElementById('copy-btn'); b.textContent='\u2705 Copi\u00e9 !';
     setTimeout(function(){b.textContent='\U0001f4cb Copier';},2000);
