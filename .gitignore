@@ -21,3 +21,4 @@ imports/
 # Archives de modules deja extraites
 *.zip
 .playwright-mcp/
+data/
