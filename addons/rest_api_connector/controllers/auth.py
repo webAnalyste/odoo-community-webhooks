@@ -56,25 +56,40 @@ FIELD_ALIASES = {
 _SKIP = {'limit', 'offset', 'created_after', 'created_before', 'updated_after'}
 
 
+def _is_known_field(raw, model_fields):
+    """Vérifie si le champ brut est connu (dans model_fields ou FIELD_ALIASES)."""
+    return raw in model_fields or raw in FIELD_ALIASES
+
+
 def build_domain(model_fields, params):
-    """Construit un domain Odoo depuis les query params bruts."""
+    """Construit un domain Odoo depuis les query params bruts.
+    Les champs inconnus sont ignorés silencieusement pour éviter les 500.
+    """
     domain = []
     for key, value in params.items():
         if key in _SKIP:
             continue
         if key.endswith('__like'):
             raw = key[:-6]
+            if not _is_known_field(raw, model_fields):
+                continue
             fname = FIELD_ALIASES.get(raw, raw)
             domain.append((fname, 'ilike', value))
         elif key.endswith('__gte'):
             raw = key[:-5]
+            if not _is_known_field(raw, model_fields):
+                continue
             fname = FIELD_ALIASES.get(raw, raw)
             domain.append((fname, '>=', value))
         elif key.endswith('__lte'):
             raw = key[:-5]
+            if not _is_known_field(raw, model_fields):
+                continue
             fname = FIELD_ALIASES.get(raw, raw)
             domain.append((fname, '<=', value))
         else:
+            if not _is_known_field(key, model_fields):
+                continue
             fname = FIELD_ALIASES.get(key, key)
             field_type = model_fields.get(key, 'char')
             if field_type in ('integer', 'many2one'):
