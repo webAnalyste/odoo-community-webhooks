@@ -13,6 +13,16 @@ import subprocess
 import datetime
 import os
 import sys
+from pathlib import Path
+
+# Load .env file from scripts/ directory if present (never committed)
+_env_file = Path(__file__).parent / '.env'
+if _env_file.exists():
+    for _line in _env_file.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith('#') and '=' in _line:
+            _k, _v = _line.split('=', 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
 
 # =============================================================================
 # CONFIGURATION
@@ -25,13 +35,13 @@ SSH_KEY         = '/Users/fscan/.ssh/contabo_key'
 PG_CONTAINER    = 'postgresql-gm7iq81galclkuzhm0bnwbxu'
 PG_USER         = 'fscan'
 PG_DB           = 'odoo'
-PG_PASSWORD     = 'YOUR_PG_PASSWORD'
+PG_PASSWORD     = os.environ.get('PG_PASSWORD', '')
 
 S3_BUCKET       = 'wa-odoo'
 S3_PREFIX       = 'data/coolify/odoo/db_backup'
 S3_REGION       = 'eu-west-3'
-AWS_KEY         = 'YOUR_AWS_ACCESS_KEY_ID'
-AWS_SECRET      = 'YOUR_AWS_SECRET_ACCESS_KEY'
+AWS_KEY         = os.environ.get('AWS_ACCESS_KEY_ID', '')
+AWS_SECRET      = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 
 RETENTION_DAYS  = 15
 LOCAL_TMP       = '/tmp'

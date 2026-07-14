@@ -11,6 +11,7 @@ banque-releves/
 coolify-backup_accessKeys.csv
 imports/sources/
 imports/archives/
+scripts/.env
 
 # Scripts d'import one-shot (données métier)
 imports/

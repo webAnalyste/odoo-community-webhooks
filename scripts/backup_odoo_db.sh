@@ -8,18 +8,25 @@
 
 set -e
 
+# Load .env file if present (never committed — copy .env.example → .env and fill in)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    set -o allexport
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/.env"
+    set +o allexport
+fi
+
 # --- CONFIGURATION -----------------------------------------------------------
 PG_CONTAINER="postgresql-gm7iq81galclkuzhm0bnwbxu"
 PG_USER="fscan"
-PG_PASSWORD="YOUR_PG_PASSWORD"
 PG_DB="odoo"
+# PG_PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY loaded from .env / env
 
 S3_BUCKET="wa-odoo"
 S3_PREFIX="data/coolify/odoo/db_backup"
 RETENTION_DAYS=15
 
-export AWS_ACCESS_KEY_ID="YOUR_AWS_ACCESS_KEY_ID"
-export AWS_SECRET_ACCESS_KEY="YOUR_AWS_SECRET_ACCESS_KEY"
 export AWS_DEFAULT_REGION="eu-west-3"
 # -----------------------------------------------------------------------------
 
