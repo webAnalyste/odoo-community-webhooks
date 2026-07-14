@@ -141,8 +141,8 @@ ssh -i ~/.ssh/contabo_key root@207.180.202.230
 3. Nettoyage fichiers S3 > 15 jours
 
 ### Credentials S3
-- Access Key : `YOUR_AWS_ACCESS_KEY_ID`
-- Fichier local : `/Users/fscan/Documents/odoo/coolify-backup_accessKeys.csv`
+- Access Key : voir `scripts/.env` (local, non versionné — copier depuis `scripts/.env.example`)
+- Fichier local : `/Users/fscan/Documents/odoo/scripts/.env`
 
 ### Vérifier / relancer manuellement
 ```bash
