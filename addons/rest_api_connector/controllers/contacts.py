@@ -9,6 +9,7 @@ CONTACT_FIELDS = {
     'phone': 'char',
     'mobile': 'char',
     'function': 'char',
+    'ref': 'char',
     'street': 'char',
     'street2': 'char',
     'city': 'char',
@@ -17,8 +18,9 @@ CONTACT_FIELDS = {
     'state_id': 'many2one',
     'parent_id': 'many2one',
     'type': 'char',
-    'active': 'boolean',
     'comment': 'char',
+    'active': 'boolean',
+    'category_id': 'many2many',
 }
 
 WRITABLE_FIELDS = list(CONTACT_FIELDS.keys())
@@ -32,6 +34,7 @@ def _serialize(contact):
         'phone': contact.phone,
         'mobile': contact.mobile,
         'function': contact.function,
+        'ref': contact.ref,
         'street': contact.street,
         'street2': contact.street2,
         'city': contact.city,
@@ -42,8 +45,10 @@ def _serialize(contact):
         'parent_id': contact.parent_id.id if contact.parent_id else None,
         'parent_name': contact.parent_id.name if contact.parent_id else None,
         'type': contact.type,
-        'active': contact.active,
         'comment': contact.comment,
+        'active': contact.active,
+        'category_id': contact.category_id.ids,
+        'category_names': contact.category_id.mapped('name'),
     }
 
 
@@ -85,6 +90,8 @@ class ContactsController(http.Controller):
         vals['is_company'] = False
         vals.pop('id', None)
         vals = {k: v for k, v in vals.items() if k in WRITABLE_FIELDS + ['is_company']}
+        if 'category_id' in vals and isinstance(vals['category_id'], list):
+            vals['category_id'] = [(6, 0, vals['category_id'])]
         contact = request.env['res.partner'].sudo().create(vals)
         return json_response(_serialize(contact), status=201)
 
@@ -100,6 +107,8 @@ class ContactsController(http.Controller):
         vals = {k: v for k, v in vals.items() if k in WRITABLE_FIELDS}
         if not vals:
             return _error(400, 'No valid fields to update')
+        if 'category_id' in vals and isinstance(vals['category_id'], list):
+            vals['category_id'] = [(6, 0, vals['category_id'])]
         contact.write(vals)
         return json_response(_serialize(contact))
 

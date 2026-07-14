@@ -11,14 +11,18 @@ COMPANY_FIELDS = {
     'website': 'char',
     'vat': 'char',
     'siret': 'char',
+    'ref': 'char',
     'street': 'char',
     'street2': 'char',
     'city': 'char',
     'zip': 'char',
     'country_id': 'many2one',
     'state_id': 'many2one',
+    'industry_id': 'many2one',
     'lang': 'char',
+    'comment': 'char',
     'active': 'boolean',
+    'category_id': 'many2many',
 }
 
 WRITABLE_FIELDS = list(COMPANY_FIELDS.keys())
@@ -34,6 +38,7 @@ def _serialize(company):
         'website': company.website,
         'vat': company.vat,
         'siret': company.siret if hasattr(company, 'siret') else None,
+        'ref': company.ref,
         'street': company.street,
         'street2': company.street2,
         'city': company.city,
@@ -42,8 +47,13 @@ def _serialize(company):
         'country_name': company.country_id.name if company.country_id else None,
         'state_id': company.state_id.id if company.state_id else None,
         'state_name': company.state_id.name if company.state_id else None,
+        'industry_id': company.industry_id.id if company.industry_id else None,
+        'industry_name': company.industry_id.name if company.industry_id else None,
         'lang': company.lang,
+        'comment': company.comment,
         'active': company.active,
+        'category_id': company.category_id.ids,
+        'category_names': company.category_id.mapped('name'),
         'contact_count': len(company.child_ids),
     }
 
@@ -86,6 +96,8 @@ class CompaniesController(http.Controller):
         vals['is_company'] = True
         vals.pop('id', None)
         vals = {k: v for k, v in vals.items() if k in WRITABLE_FIELDS + ['is_company']}
+        if 'category_id' in vals and isinstance(vals['category_id'], list):
+            vals['category_id'] = [(6, 0, vals['category_id'])]
         company = request.env['res.partner'].sudo().create(vals)
         return json_response(_serialize(company), status=201)
 
@@ -101,6 +113,8 @@ class CompaniesController(http.Controller):
         vals = {k: v for k, v in vals.items() if k in WRITABLE_FIELDS}
         if not vals:
             return _error(400, 'No valid fields to update')
+        if 'category_id' in vals and isinstance(vals['category_id'], list):
+            vals['category_id'] = [(6, 0, vals['category_id'])]
         company.write(vals)
         return json_response(_serialize(company))
 
