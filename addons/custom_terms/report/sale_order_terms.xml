@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Injection des CG spécifiques Devis en bas du PDF devis, après les CG générales -->
+    <template id="sale_order_specific_terms" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//span[@name='order_note']" position="after">
+            <t t-set="specific_terms" t-value="doc.company_id.x_terms_sale_order"/>
+            <t t-if="specific_terms">
+                <div class="mt-2" name="x_terms_sale_order">
+                    <t t-out="specific_terms"/>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Bouton "Décliner en 4 variantes" sur la fiche produit Formation -->
+    <record id="product_template_form_decline_variants" model="ir.ui.view">
+        <field name="name">product.template.form.decline.variants</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_decline_formation_variants"
+                        type="object"
+                        string="Décliner en 4 variantes"
+                        class="oe_stat_button"
+                        icon="fa-sitemap"
+                        invisible="x_has_formation_variants">
+                    <field name="x_has_formation_variants" invisible="1"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Toujours afficher la Référence interne, même avec plusieurs variantes.
+         Priorité 9 > 8 (vue native) pour s'appliquer après et écraser l'invisible. -->
+    <record id="product_template_form_show_default_code" model="ir.ui.view">
+        <field name="name">product.template.form.show.default.code</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="priority">9</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='default_code']" position="replace">
+                <field name="default_code" string="Référence interne"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Colonne "Nb variantes" dans la liste produits -->
+    <record id="product_template_list_variant_count" model="ir.ui.view">
+        <field name="name">product.template.list.variant.count</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <field name="product_variant_count" position="attributes">
+                <attribute name="column_invisible">False</attribute>
+                <attribute name="string">Variantes</attribute>
+                <attribute name="optional">show</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

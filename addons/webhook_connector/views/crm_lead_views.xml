@@ -12,6 +12,13 @@
                        options="{'no_create': True}"
                        placeholder="Sélectionner un contact..."/>
                 <field name="x_participants" string="Nombre de participants"/>
+                <field name="x_date_debut" string="Date de début"/>
+                <field name="x_date_fin" string="Date de fin"/>
+                <field name="x_nb_heures" string="Nombre d'heures"/>
+                <field name="x_stagiaires" string="Liste des stagiaires"
+                       placeholder="Ex : Prénom1 Nom1, Prénom2 Nom2, ..."/>
+                <field name="x_stagiaires_emails" string="Emails des stagiaires"
+                       placeholder="Ex : email1@exemple.com, email2@exemple.com, ..."/>
             </xpath>
         </field>
     </record>

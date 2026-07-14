@@ -80,6 +80,79 @@ Depuis OCA/bank-statement-import :
 
 Ordre d'installation : dans cet ordre exactement (dépendances d'abord).
 
+## Scripts d'intervention locale (méthode privilégiée)
+
+**Toute intervention sur les données Odoo se fait via scripts Python locaux utilisant l'API XML-RPC.**
+Ne jamais modifier la DB en SQL brut sans passer par l'ORM Odoo (les champs computed stored ne se recalculent pas en SQL).
+
+### Structure
+```
+/Users/fscan/Documents/odoo/
+├── imports/
+│   ├── config.py          ← configuration centrale (URL, DB, clé API)
+│   ├── fix_*.py           ← scripts de correction de données
+│   └── import_*.py        ← scripts d'import
+└── scripts/
+    ├── backup_odoo_db.sh  ← script backup (déployé sur VPS)
+    └── backup_odoo_db.py  ← backup depuis Mac (usage ponctuel)
+```
+
+### Connexion API XML-RPC
+```python
+import sys
+sys.path.insert(0, '/Users/fscan/Documents/odoo/imports')
+from config import DB, USERNAME, PASSWORD, get_connection, make_helpers
+
+uid, obj = get_connection()
+sr, create, write, call = make_helpers(uid, obj)
+```
+
+### Forcer le recalcul d'un champ computed stored
+Les champs `qty_invoiced`, `invoice_status` sur `sale.order.line` sont stored.
+Après modification SQL directe, ils ne se recalculent pas — passer par l'ORM :
+```python
+# Unlink + relink la invoice_line pour déclencher le recalcul
+obj.execute_kw(DB, uid, PASSWORD, 'sale.order.line', 'write',
+    [[line_id], {'invoice_lines': [(3, il_id)]}], {})
+obj.execute_kw(DB, uid, PASSWORD, 'sale.order.line', 'write',
+    [[line_id], {'invoice_lines': [(4, il_id)]}], {})
+# Ou forcer directement si invoice_lines est vide :
+obj.execute_kw(DB, uid, PASSWORD, 'sale.order.line', 'write',
+    [[line_id], {'qty_invoiced': 0.0}], {})
+```
+
+### SSH sur le VPS
+```bash
+ssh -i ~/.ssh/contabo_key root@207.180.202.230
+```
+
+## Backup automatique
+
+### Architecture
+- **Script** : `/opt/odoo/backup_odoo_db.sh` sur le VPS
+- **Cron VPS** : `0 2,14 * * *` (2h et 14h heure serveur, toutes les 12h)
+- **Destination** : S3 `s3://wa-odoo/data/coolify/odoo/db_backup/`
+- **Rétention** : 15 jours glissants (suppression auto sur S3)
+- **Logs** : `/var/log/backup_odoo.log` sur le VPS
+
+### Fonctionnement
+1. `pg_dump` dans le container `postgresql-gm7iq81galclkuzhm0bnwbxu` → `/tmp/`
+2. Upload S3 `eu-west-3` via `awscli`
+3. Nettoyage fichiers S3 > 15 jours
+
+### Credentials S3
+- Access Key : `YOUR_AWS_ACCESS_KEY_ID`
+- Fichier local : `/Users/fscan/Documents/odoo/coolify-backup_accessKeys.csv`
+
+### Vérifier / relancer manuellement
+```bash
+ssh -i ~/.ssh/contabo_key root@207.180.202.230 "bash /opt/odoo/backup_odoo_db.sh"
+ssh -i ~/.ssh/contabo_key root@207.180.202.230 "tail -50 /var/log/backup_odoo.log"
+```
+
+### Note : backup Coolify inutilisable
+Coolify backup la DB `postgres` (vide) au lieu de `odoo` — fichiers 1KB non valides. Ne pas utiliser.
+
 ## Commandes essentielles
 
 ```bash
@@ -99,6 +172,17 @@ chown -R odoo:odoo /mnt/extra-addons
 - Contrôler ce qui est installé, pas seulement ce qui est présent
 - Avant tout module touchant compta/factures/ventes : lire `__manifest__.py`, vérifier dépendances, faire une sauvegarde
 - Préférer CLI à l'interface graphique pour les opérations sur les modules
+
+## ⛔ RÈGLE ABSOLUE — LIRE AVANT DE JUGER
+
+**NE JAMAIS proposer de refactoring, déplacement ou suppression de code sans avoir :**
+1. Lu **tous** les fichiers du module concerné
+2. Tracé **toutes les dépendances** (qui appelle quoi, qui consomme quoi)
+3. Vérifié que le code jugé "hors-sujet" n'est pas utilisé indirectement ailleurs
+
+**Exemple de catastrophe évitée :** `webhook_connector/models/product_template.py` génère les `default_code` des variantes formation (ex: `form-as1-inter-distanciel`). Ces codes sont remontés dans le payload webhook `product_codes`. Supprimer ce fichier aurait cassé tous les webhooks CRM silencieusement.
+
+**Un nom de fichier ne dit pas ce qu'il fait dans le système. Lire le code, toujours.**
 
 ## Facturation électronique — roadmap
 

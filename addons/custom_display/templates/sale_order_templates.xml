@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- PDF devis : ajout de la date de livraison promise -->
+    <template id="sale_report_commitment_date" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//div[@name='expiration_date']" position="after">
+            <div t-if="doc.commitment_date" class="col" name="commitment_date">
+                <strong>Date de livraison</strong>
+                <div t-field="doc.commitment_date" t-options='{"widget": "date"}'>2023-12-31</div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

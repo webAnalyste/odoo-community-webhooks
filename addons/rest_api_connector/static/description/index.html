@@ -1,0 +1,325 @@
+<section style="font-family: sans-serif; max-width: 1000px; color: #333;">
+
+<h1 style="color: #7c7bad;">REST API Connector</h1>
+<p>API REST JSON pour piloter Odoo depuis n8n, Make, scripts, etc.</p>
+
+<h2>Authentification</h2>
+<p>Toutes les requêtes nécessitent le header <code style="background:#f4f4f4;padding:2px 6px;border-radius:3px;">X-API-Key: votre_cle</code></p>
+<p><strong>Configurer la clé :</strong> Paramètres → Technique → Paramètres système → clé <code>rest_api_connector.api_key</code></p>
+
+<hr style="margin:30px 0;border:none;border-top:1px solid #ddd;"/>
+
+<h2 style="color:#7c7bad;">Générateur de requêtes</h2>
+
+<div style="background:#f9f9fc;border:1px solid #ddd;border-radius:8px;padding:20px;margin-bottom:30px;">
+
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+    <div style="flex:1;min-width:180px;">
+      <label style="font-weight:bold;display:block;margin-bottom:4px;">Ressource</label>
+      <select id="gen-resource" onchange="genUpdate()" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+        <option value="companies">Entreprises</option>
+        <option value="contacts">Contacts</option>
+        <option value="crm/leads">Opportunités CRM</option>
+      </select>
+    </div>
+    <div style="flex:1;min-width:180px;">
+      <label style="font-weight:bold;display:block;margin-bottom:4px;">Méthode</label>
+      <select id="gen-method" onchange="genUpdate()" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+        <option value="GET">GET — Lister / Chercher</option>
+        <option value="GET_ID">GET /{id} — Détail</option>
+        <option value="POST">POST — Créer</option>
+        <option value="PUT">PUT /{id} — Mettre à jour</option>
+        <option value="DELETE">DELETE /{id} — Archiver</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="gen-filters-section">
+    <label style="font-weight:bold;display:block;margin-bottom:8px;">Filtres <small style="font-weight:normal;color:#888;">(double underscore __ pour les opérateurs)</small></label>
+    <div id="gen-filters">
+      <div class="filter-row" style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="text" placeholder="champ  ex: name" style="flex:2;padding:7px;border:1px solid #ccc;border-radius:4px;" oninput="genUpdate()">
+        <select onchange="genUpdate()" style="flex:1;padding:7px;border:1px solid #ccc;border-radius:4px;">
+          <option value="eq">= égal</option>
+          <option value="like">__like contient</option>
+          <option value="gte">__gte &gt;=</option>
+          <option value="lte">__lte &lt;=</option>
+        </select>
+        <input type="text" placeholder="valeur" style="flex:2;padding:7px;border:1px solid #ccc;border-radius:4px;" oninput="genUpdate()">
+        <button onclick="removeFilter(this)" style="padding:7px 12px;background:#e55;color:white;border:none;border-radius:4px;cursor:pointer;">X</button>
+      </div>
+    </div>
+    <button onclick="addFilter()" style="padding:6px 14px;background:#7c7bad;color:white;border:none;border-radius:4px;cursor:pointer;margin-bottom:12px;">+ Ajouter un filtre</button>
+
+    <div style="display:flex;gap:16px;margin-bottom:12px;">
+      <div>
+        <label style="font-weight:bold;display:block;margin-bottom:4px;">Limit</label>
+        <input type="number" id="gen-limit" value="20" min="1" max="500" style="width:80px;padding:7px;border:1px solid #ccc;border-radius:4px;" oninput="genUpdate()">
+      </div>
+      <div>
+        <label style="font-weight:bold;display:block;margin-bottom:4px;">Offset</label>
+        <input type="number" id="gen-offset" value="0" min="0" style="width:80px;padding:7px;border:1px solid #ccc;border-radius:4px;" oninput="genUpdate()">
+      </div>
+    </div>
+  </div>
+
+  <div id="gen-id-section" style="display:none;margin-bottom:12px;">
+    <label style="font-weight:bold;display:block;margin-bottom:4px;">ID de la ressource</label>
+    <input type="number" id="gen-id" placeholder="ex: 42" style="width:120px;padding:7px;border:1px solid #ccc;border-radius:4px;" oninput="genUpdate()">
+  </div>
+
+  <div id="gen-body-section" style="display:none;margin-bottom:12px;">
+    <label style="font-weight:bold;display:block;margin-bottom:4px;">Corps JSON</label>
+    <textarea id="gen-body" rows="8" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-family:monospace;font-size:13px;box-sizing:border-box;" oninput="genUpdate()" placeholder='{"name": "Ma Société"}'></textarea>
+    <button id="gen-preset-btn" onclick="loadPreset()" style="margin-top:6px;padding:4px 10px;background:#eee;border:1px solid #ccc;border-radius:4px;cursor:pointer;font-size:12px;display:none;">Charger exemple</button>
+  </div>
+
+  <label style="font-weight:bold;display:block;margin-bottom:6px;">Requête générée</label>
+  <div style="position:relative;">
+    <pre id="gen-output" style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:6px;overflow-x:auto;font-size:13px;line-height:1.6;margin:0;white-space:pre-wrap;"></pre>
+    <button onclick="copyGen()" style="position:absolute;top:8px;right:8px;padding:4px 10px;background:#7c7bad;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Copier</button>
+  </div>
+</div>
+
+<script>
+var BASE = 'https://odoo.webanalyste.com';
+var KEY = 'rac_Kj9mX2pL7vQnR4wT8yF3dH6bN1sE5uA0';
+
+var PRESETS = {
+  companies: {
+    POST: '{\n  "name": "Ma Société",\n  "email": "contact@masociete.fr",\n  "phone": "01 23 45 67 89",\n  "city": "Paris",\n  "zip": "75001",\n  "country_id": 75,\n  "vat": "FR12345678901"\n}',
+    PUT: '{\n  "phone": "01 99 88 77 66",\n  "website": "https://masociete.fr"\n}'
+  },
+  contacts: {
+    POST: '{\n  "name": "Jean Dupont",\n  "email": "jean.dupont@masociete.fr",\n  "phone": "06 12 34 56 78",\n  "function": "Directeur Commercial",\n  "parent_id": 42,\n  "type": "contact"\n}',
+    PUT: '{\n  "email": "nouveau@email.fr",\n  "mobile": "07 98 76 54 32"\n}'
+  },
+  'crm/leads': {
+    POST: '{\n  "name": "Formation React - Ma Societe",\n  "partner_id": 42,\n  "stage_id": 1,\n  "expected_revenue": 3500.0,\n  "x_participants": 8,\n  "x_date_debut": "2026-09-15",\n  "x_date_fin": "2026-09-19",\n  "x_nb_heures": 35.0,\n  "x_contact_id": 123\n}',
+    PUT: '{\n  "stage_id": 4,\n  "expected_revenue": 4200.0,\n  "probability": 80\n}'
+  }
+};
+
+function addFilter() {
+  var container = document.getElementById('gen-filters');
+  var row = document.createElement('div');
+  row.className = 'filter-row';
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;';
+
+  var inp1 = document.createElement('input');
+  inp1.type = 'text';
+  inp1.placeholder = 'champ  ex: name';
+  inp1.style.cssText = 'flex:2;padding:7px;border:1px solid #ccc;border-radius:4px;';
+  inp1.oninput = genUpdate;
+
+  var sel = document.createElement('select');
+  sel.style.cssText = 'flex:1;padding:7px;border:1px solid #ccc;border-radius:4px;';
+  sel.onchange = genUpdate;
+  [['eq','= égal'],['like','__like contient'],['gte','__gte >='],['lte','__lte <=']].forEach(function(o) {
+    var opt = document.createElement('option');
+    opt.value = o[0];
+    opt.textContent = o[1];
+    sel.appendChild(opt);
+  });
+
+  var inp2 = document.createElement('input');
+  inp2.type = 'text';
+  inp2.placeholder = 'valeur';
+  inp2.style.cssText = 'flex:2;padding:7px;border:1px solid #ccc;border-radius:4px;';
+  inp2.oninput = genUpdate;
+
+  var btn = document.createElement('button');
+  btn.textContent = 'X';
+  btn.style.cssText = 'padding:7px 12px;background:#e55;color:white;border:none;border-radius:4px;cursor:pointer;';
+  btn.onclick = function() { row.remove(); genUpdate(); };
+
+  row.appendChild(inp1);
+  row.appendChild(sel);
+  row.appendChild(inp2);
+  row.appendChild(btn);
+  container.appendChild(row);
+  genUpdate();
+}
+
+function removeFilter(btn) {
+  btn.parentElement.remove();
+  genUpdate();
+}
+
+function loadPreset() {
+  var resource = document.getElementById('gen-resource').value;
+  var method = document.getElementById('gen-method').value;
+  var preset = (PRESETS[resource] || {})[method] || '';
+  if (preset) {
+    document.getElementById('gen-body').value = preset;
+    genUpdate();
+  }
+}
+
+function genUpdate() {
+  var resource = document.getElementById('gen-resource').value;
+  var method = document.getElementById('gen-method').value;
+  var isGet = method === 'GET';
+  var isGetId = method === 'GET_ID';
+  var isPost = method === 'POST';
+  var isPut = method === 'PUT';
+  var isDel = method === 'DELETE';
+
+  document.getElementById('gen-filters-section').style.display = isGet ? '' : 'none';
+  document.getElementById('gen-id-section').style.display = (isGetId || isPut || isDel) ? '' : 'none';
+  document.getElementById('gen-body-section').style.display = (isPost || isPut) ? '' : 'none';
+
+  var presetBtn = document.getElementById('gen-preset-btn');
+  if (isPost || isPut) {
+    var hasPreset = !!((PRESETS[resource] || {})[isPost ? 'POST' : 'PUT']);
+    presetBtn.style.display = hasPreset ? '' : 'none';
+  } else {
+    presetBtn.style.display = 'none';
+  }
+
+  var id = document.getElementById('gen-id') ? document.getElementById('gen-id').value : '';
+  var limit = document.getElementById('gen-limit') ? document.getElementById('gen-limit').value : '20';
+  var offset = document.getElementById('gen-offset') ? document.getElementById('gen-offset').value : '0';
+  var httpMethod = isGet ? 'GET' : isGetId ? 'GET' : isPost ? 'POST' : isPut ? 'PUT' : 'DELETE';
+
+  var url = BASE + '/api/v1/' + resource;
+  if (isGetId || isPut || isDel) url += '/' + (id || '{id}');
+
+  var params = [];
+  if (isGet) {
+    document.querySelectorAll('#gen-filters .filter-row').forEach(function(row) {
+      var inputs = row.querySelectorAll('input');
+      var sel = row.querySelector('select');
+      var field = inputs[0].value.trim();
+      var op = sel.value;
+      var val = inputs[1].value.trim();
+      if (field && val) {
+        var key = op === 'eq' ? field : field + '__' + (op === 'like' ? 'like' : op);
+        params.push(encodeURIComponent(key) + '=' + encodeURIComponent(val));
+      }
+    });
+    if (limit && parseInt(limit) !== 100) params.push('limit=' + limit);
+    if (offset && parseInt(offset) !== 0) params.push('offset=' + offset);
+    if (params.length) url += '?' + params.join('&');
+  }
+
+  var body = (isPost || isPut) ? (document.getElementById('gen-body').value || '').trim() : '';
+
+  var lines = ['curl -s \\'];
+  lines.push('  -H "X-API-Key: ' + KEY + '" \\');
+  if (httpMethod !== 'GET') lines.push('  -X ' + httpMethod + ' \\');
+  if (body) lines.push("  -H \"Content-Type: application/json\" \\");
+  if (body) lines.push("  -d '" + body + "' \\");
+  lines.push('  "' + url + '" | jq');
+
+  document.getElementById('gen-output').textContent = lines.join('\n');
+}
+
+function copyGen() {
+  var text = document.getElementById('gen-output').textContent;
+  navigator.clipboard.writeText(text).catch(function() {});
+}
+
+genUpdate();
+</script>
+
+<hr style="margin:30px 0;border:none;border-top:1px solid #ddd;"/>
+
+<h2 style="color:#7c7bad;">Référence rapide</h2>
+
+<h3>Filtres — syntaxe</h3>
+<p><strong>Double underscore</strong> obligatoire : <code>champ__like</code>, <code>champ__gte</code>, <code>champ__lte</code></p>
+<table style="width:100%;border-collapse:collapse;font-size:14px;">
+  <thead><tr style="background:#7c7bad;color:white;">
+    <th style="padding:8px;">Syntaxe</th><th style="padding:8px;">Opérateur</th><th style="padding:8px;">Exemple</th>
+  </tr></thead>
+  <tbody>
+    <tr style="background:#f9f9f9;"><td style="padding:8px;"><code>champ=valeur</code></td><td style="padding:8px;">Egalite exacte</td><td style="padding:8px;"><code>city=Paris</code> / <code>stage_id=3</code></td></tr>
+    <tr><td style="padding:8px;"><code>champ__like=valeur</code></td><td style="padding:8px;">Contient (ilike)</td><td style="padding:8px;"><code>name__like=veolia</code> / <code>partner_name__like=veolia</code></td></tr>
+    <tr style="background:#f9f9f9;"><td style="padding:8px;"><code>champ__gte=valeur</code></td><td style="padding:8px;">&gt;= superieur ou egal</td><td style="padding:8px;"><code>expected_revenue__gte=1000</code></td></tr>
+    <tr><td style="padding:8px;"><code>champ__lte=valeur</code></td><td style="padding:8px;">&lt;= inferieur ou egal</td><td style="padding:8px;"><code>expected_revenue__lte=5000</code></td></tr>
+    <tr style="background:#f9f9f9;"><td style="padding:8px;"><code>created_after=date</code></td><td style="padding:8px;">Cree apres (CRM)</td><td style="padding:8px;"><code>created_after=2026-01-01</code></td></tr>
+    <tr><td style="padding:8px;"><code>updated_after=date</code></td><td style="padding:8px;">Modifie apres (CRM)</td><td style="padding:8px;"><code>updated_after=2026-07-01</code></td></tr>
+    <tr style="background:#f9f9f9;"><td style="padding:8px;"><code>limit=N</code></td><td style="padding:8px;">Nb resultats max</td><td style="padding:8px;"><code>limit=50</code> (defaut 100, max 500)</td></tr>
+    <tr><td style="padding:8px;"><code>offset=N</code></td><td style="padding:8px;">Pagination</td><td style="padding:8px;"><code>offset=100</code></td></tr>
+  </tbody>
+</table>
+
+<h3 style="margin-top:24px;">Champs disponibles</h3>
+
+<details style="margin-bottom:12px;">
+  <summary style="cursor:pointer;font-weight:bold;padding:8px;background:#f4f4f4;border-radius:4px;">Entreprises — /api/v1/companies</summary>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;">
+    <thead><tr style="background:#7c7bad;color:white;"><th style="padding:6px;">Champ</th><th style="padding:6px;">Type</th><th style="padding:6px;">Notes</th></tr></thead>
+    <tbody>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>name</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">Obligatoire a la creation</td></tr>
+      <tr><td style="padding:6px;"><code>email</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>phone</code> / <code>mobile</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr><td style="padding:6px;"><code>website</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>vat</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">TVA intracommunautaire</td></tr>
+      <tr><td style="padding:6px;"><code>siret</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>street</code> / <code>street2</code> / <code>city</code> / <code>zip</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr><td style="padding:6px;"><code>country_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">75 = France</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>lang</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">ex: fr_FR</td></tr>
+      <tr><td style="padding:6px;"><code>active</code></td><td style="padding:6px;">booleen</td><td style="padding:6px;">true / false</td></tr>
+    </tbody>
+  </table>
+</details>
+
+<details style="margin-bottom:12px;">
+  <summary style="cursor:pointer;font-weight:bold;padding:8px;background:#f4f4f4;border-radius:4px;">Contacts — /api/v1/contacts</summary>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;">
+    <thead><tr style="background:#7c7bad;color:white;"><th style="padding:6px;">Champ</th><th style="padding:6px;">Type</th><th style="padding:6px;">Notes</th></tr></thead>
+    <tbody>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>name</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">Obligatoire a la creation</td></tr>
+      <tr><td style="padding:6px;"><code>parent_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">ID de l'entreprise liee</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>email</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr><td style="padding:6px;"><code>phone</code> / <code>mobile</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>function</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">Poste / fonction</td></tr>
+      <tr><td style="padding:6px;"><code>type</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">contact, invoice, delivery, other</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>street</code> / <code>city</code> / <code>zip</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr><td style="padding:6px;"><code>country_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">75 = France</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>active</code></td><td style="padding:6px;">booleen</td><td style="padding:6px;"></td></tr>
+    </tbody>
+  </table>
+</details>
+
+<details style="margin-bottom:12px;">
+  <summary style="cursor:pointer;font-weight:bold;padding:8px;background:#f4f4f4;border-radius:4px;">Opportunites CRM — /api/v1/crm/leads</summary>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;">
+    <thead><tr style="background:#7c7bad;color:white;"><th style="padding:6px;">Champ</th><th style="padding:6px;">Type</th><th style="padding:6px;">Notes</th></tr></thead>
+    <tbody>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>name</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">Titre — obligatoire</td></tr>
+      <tr><td style="padding:6px;"><code>partner_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">ID entreprise liee</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>partner_name</code></td><td style="padding:6px;">texte</td><td style="padding:6px;">Nom entreprise — filtrable avec partner_name__like=veolia</td></tr>
+      <tr><td style="padding:6px;"><code>stage_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">Etape du pipeline</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>user_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">Commercial assigne</td></tr>
+      <tr><td style="padding:6px;"><code>team_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">Equipe commerciale</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>expected_revenue</code></td><td style="padding:6px;">decimal</td><td style="padding:6px;"></td></tr>
+      <tr><td style="padding:6px;"><code>probability</code></td><td style="padding:6px;">decimal</td><td style="padding:6px;">0 a 100</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>email_from</code> / <code>phone</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+      <tr><td style="padding:6px;"><code>date_deadline</code></td><td style="padding:6px;">date</td><td style="padding:6px;">Format YYYY-MM-DD</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>tag_ids</code></td><td style="padding:6px;">liste d'IDs</td><td style="padding:6px;">ex: [1, 2, 3]</td></tr>
+      <tr><td style="padding:6px;"><code>x_participants</code></td><td style="padding:6px;">entier</td><td style="padding:6px;">Nombre de stagiaires</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>x_date_debut</code> / <code>x_date_fin</code></td><td style="padding:6px;">date</td><td style="padding:6px;">Format YYYY-MM-DD</td></tr>
+      <tr><td style="padding:6px;"><code>x_nb_heures</code></td><td style="padding:6px;">decimal</td><td style="padding:6px;">Duree de la formation</td></tr>
+      <tr style="background:#f9f9f9;"><td style="padding:6px;"><code>x_contact_id</code></td><td style="padding:6px;">entier (ID)</td><td style="padding:6px;">Contact client lie</td></tr>
+      <tr><td style="padding:6px;"><code>x_stagiaires</code> / <code>x_stagiaires_emails</code></td><td style="padding:6px;">texte</td><td style="padding:6px;"></td></tr>
+    </tbody>
+  </table>
+</details>
+
+<h3 style="margin-top:24px;">Codes de reponse</h3>
+<table style="width:100%;border-collapse:collapse;font-size:14px;">
+  <thead><tr style="background:#7c7bad;color:white;"><th style="padding:8px;">Code</th><th style="padding:8px;">Signification</th></tr></thead>
+  <tbody>
+    <tr style="background:#f9f9f9;"><td style="padding:8px;">200</td><td style="padding:8px;">Succes</td></tr>
+    <tr><td style="padding:8px;">201</td><td style="padding:8px;">Cree avec succes</td></tr>
+    <tr style="background:#f9f9f9;"><td style="padding:8px;">400</td><td style="padding:8px;">Donnees invalides (champ requis manquant)</td></tr>
+    <tr><td style="padding:8px;">401</td><td style="padding:8px;">Header X-API-Key manquant</td></tr>
+    <tr style="background:#f9f9f9;"><td style="padding:8px;">403</td><td style="padding:8px;">Cle API invalide</td></tr>
+    <tr><td style="padding:8px;">404</td><td style="padding:8px;">Ressource introuvable</td></tr>
+  </tbody>
+</table>
+
+</section>

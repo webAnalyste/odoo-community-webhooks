@@ -1,8 +1,23 @@
 import json
 import logging
+import pytz
 import requests
+from datetime import datetime
 from odoo import api, fields, models
 from odoo.tools import html2plaintext
+
+_PARIS = pytz.timezone('Europe/Paris')
+
+
+def _to_paris(dt):
+    """Convertit un datetime UTC (naïf ou aware) en chaîne heure Paris."""
+    if not dt:
+        return None
+    if isinstance(dt, str):
+        dt = datetime.fromisoformat(dt)
+    if dt.tzinfo is None:
+        dt = pytz.utc.localize(dt)
+    return dt.astimezone(_PARIS).strftime('%Y-%m-%d %H:%M:%S')
 
 _logger = logging.getLogger(__name__)
 
@@ -164,8 +179,18 @@ class WebhookEndpoint(models.Model):
                 'team_name': record.team_id.name if record.team_id else None,
                 'partner_id': record.partner_id.id if record.partner_id else None,
                 'partner_name': record.partner_id.display_name if record.partner_id else None,
+                'partner_street': record.partner_id.street if record.partner_id else None,
+                'partner_street2': record.partner_id.street2 if record.partner_id else None,
+                'partner_zip': record.partner_id.zip if record.partner_id else None,
+                'partner_city': record.partner_id.city if record.partner_id else None,
+                'partner_country': record.partner_id.country_id.name if record.partner_id and record.partner_id.country_id else None,
                 'expected_revenue': record.expected_revenue,
                 'probability': record.probability,
+                'x_date_debut': str(record.x_date_debut) if record.x_date_debut else None,
+                'x_date_fin': str(record.x_date_fin) if record.x_date_fin else None,
+                'x_nb_heures': record.x_nb_heures if hasattr(record, 'x_nb_heures') else None,
+                'x_stagiaires': record.x_stagiaires if hasattr(record, 'x_stagiaires') else None,
+                'x_stagiaires_emails': record.x_stagiaires_emails if hasattr(record, 'x_stagiaires_emails') else None,
             })
 
             # Notes internes
@@ -190,8 +215,9 @@ class WebhookEndpoint(models.Model):
                                 'name': order.name,
                                 'state': order.state,
                                 'amount_total': order.amount_total,
-                                'date_order': str(order.date_order) if order.date_order else None,
+                                'date_order': _to_paris(order.date_order),
                                 'validity_date': str(order.validity_date) if order.validity_date else None,
+                                'commitment_date': str(order.commitment_date.date()) if order.commitment_date else None,
                                 'portal_url': 'https://odoo.webanalyste.com/my/orders/%s?access_token=%s' % (order.id, token),
                                 'pdf_url': 'https://odoo.webanalyste.com/report/pdf/sale.report_saleorder/%s?access_token=%s' % (order.id, token),
                             }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- CG spécifiques Devis et Facture — dans Paramètres > Facturation, après le bloc use_invoice_terms -->
+    <record id="res_config_settings_view_custom_terms" model="ir.ui.view">
+        <field name="name">res.config.settings.view.custom.terms</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='use_invoice_terms']" position="after">
+                <setting id="x_terms_sale_order" string="CG spécifiques Devis"
+                    help="Texte affiché en bas de chaque PDF de devis, en complément des CG générales">
+                    <field name="x_terms_sale_order" widget="html" style="min-height:80px" nolabel="1"/>
+                </setting>
+                <setting id="x_terms_invoice" string="CG spécifiques Facture"
+                    help="Texte affiché en bas de chaque PDF de facture, en complément des CG générales">
+                    <field name="x_terms_invoice" widget="html" style="min-height:80px" nolabel="1"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

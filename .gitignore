@@ -17,3 +17,7 @@ imports/
 
 # Odoo runtime
 *.log
+
+# Archives de modules deja extraites
+*.zip
+.playwright-mcp/

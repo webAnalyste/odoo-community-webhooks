@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Portail commande : commitment_date géré nativement par Odoo 18 pour sent/sale -->
+    <!-- Placeholder pour futures customisations portail -->
+</odoo>

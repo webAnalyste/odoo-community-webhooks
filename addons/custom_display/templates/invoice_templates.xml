@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- PDF facture : champs formation depuis l'opportunité liée -->
+    <template id="invoice_report_formation_fields" inherit_id="account.report_invoice_document">
+        <xpath expr="//table[contains(@class,'o_main_table')]" position="after">
+            <t t-set="linked_order2" t-value="o.invoice_line_ids.mapped('sale_line_ids.order_id')[:1]"/>
+            <t t-set="linked_opp2" t-value="linked_order2.opportunity_id if linked_order2 else False"/>
+            <t t-if="linked_opp2 and linked_opp2.team_id.name == 'Formations'">
+                <div class="mt-4" name="invoice_formation_bloc">
+                    <t t-if="linked_opp2.x_stagiaires">
+                        <strong>Liste des stagiaires</strong>
+                        <p t-esc="linked_opp2.x_stagiaires"/>
+                    </t>
+                    <t t-if="linked_opp2.x_date_debut or linked_opp2.x_date_fin">
+                        <strong>Période de formation</strong>
+                        <p>
+                            <t t-if="linked_opp2.x_date_debut">Du <span t-field="linked_opp2.x_date_debut" t-options='{"widget": "date"}'/></t>
+                            <t t-if="linked_opp2.x_date_fin"> au <span t-field="linked_opp2.x_date_fin" t-options='{"widget": "date"}'/></t>
+                        </p>
+                    </t>
+                    <t t-if="linked_opp2.x_nb_heures">
+                        <strong>Nombre d'heures</strong>
+                        <p><t t-esc="linked_opp2.x_nb_heures"/> h</p>
+                    </t>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

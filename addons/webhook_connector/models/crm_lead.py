@@ -8,6 +8,11 @@ class CrmLead(models.Model):
     _inherit = 'crm.lead'
 
     x_participants = fields.Integer(string='Nombre de participants')
+    x_date_debut = fields.Date(string='Date de début')
+    x_date_fin = fields.Date(string='Date de fin')
+    x_nb_heures = fields.Float(string='Nombre d\'heures')
+    x_stagiaires = fields.Text(string='Liste des stagiaires')
+    x_stagiaires_emails = fields.Text(string='Emails des stagiaires')
 
     x_contact_id = fields.Many2one(
         comodel_name='res.partner',
@@ -49,12 +54,16 @@ class CrmLead(models.Model):
                       r.expected_revenue, r.probability, r.description,
                       r.x_contact_id.id if r.x_contact_id else None,
                       r.x_contact_id.name if r.x_contact_id else None,
-                      r.x_contact_id.email if r.x_contact_id else None)
+                      r.x_contact_id.email if r.x_contact_id else None,
+                      r.x_date_debut, r.x_date_fin, r.x_nb_heures,
+                      r.x_stagiaires, r.x_stagiaires_emails)
                      for r in self]
         result = super().unlink()
         for (rec_id, rec_name, name, sid, sname,
              pid, pname, revenue, prob, description,
-             xcid, xcname, xcemail) in snapshots:
+             xcid, xcname, xcemail,
+             x_date_debut, x_date_fin, x_nb_heures,
+             x_stagiaires, x_stagiaires_emails) in snapshots:
             fake = type('D', (), {
                 'id': rec_id, 'display_name': rec_name, 'name': name,
                 'stage_id': type('s', (), {'id': sid, 'name': sname})(),
@@ -63,6 +72,11 @@ class CrmLead(models.Model):
                 'probability': prob,
                 'description': description,
                 'x_contact_id': type('x', (), {'id': xcid, 'name': xcname, 'email': xcemail})() if xcid else None,
+                'x_date_debut': x_date_debut,
+                'x_date_fin': x_date_fin,
+                'x_nb_heures': x_nb_heures,
+                'x_stagiaires': x_stagiaires,
+                'x_stagiaires_emails': x_stagiaires_emails,
             })()
             _fire_webhooks(self.env, _MODEL, fake, 'unlink')
         return result

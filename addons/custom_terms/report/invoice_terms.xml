@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Injection des CG spécifiques Facture en bas du PDF facture, après les CG générales -->
+    <template id="invoice_specific_terms" inherit_id="account.report_invoice_document">
+        <xpath expr="//div[@name='comment']" position="after">
+            <t t-set="specific_terms" t-value="o.company_id.x_terms_invoice"/>
+            <t t-if="specific_terms">
+                <div class="text-muted mb-3 mt-2" name="x_terms_invoice">
+                    <t t-out="specific_terms"/>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>
