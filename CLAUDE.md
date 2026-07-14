@@ -126,6 +126,50 @@ obj.execute_kw(DB, uid, PASSWORD, 'sale.order.line', 'write',
 ssh -i ~/.ssh/contabo_key root@207.180.202.230
 ```
 
+### Containers Docker (Coolify)
+| Rôle | Nom container |
+|------|--------------|
+| Odoo 18 | `odoo-gm7iq81galclkuzhm0bnwbxu` |
+| PostgreSQL 16 | `postgresql-gm7iq81galclkuzhm0bnwbxu` |
+| Proxy (Traefik) | `coolify-proxy` |
+
+### Volume extra-addons — chemin réel sur l'hôte
+```
+/var/lib/docker/volumes/gm7iq81galclkuzhm0bnwbxu_odoo-extra-addons/_data/
+```
+> ⚠️ `/mnt/extra-addons` est le chemin **dans le container**, pas sur l'hôte.  
+> `scp` vers `/mnt/extra-addons` sur l'hôte = mauvais répertoire, le container ne le voit pas.
+
+### Déployer un fichier modifié sur le VPS
+
+```bash
+# 1. Copier le fichier en local vers /tmp sur le VPS
+scp -i ~/.ssh/contabo_key chemin/local/fichier.py root@207.180.202.230:/tmp/fichier.py
+
+# 2. Injecter dans le container (méthode correcte)
+ssh -i ~/.ssh/contabo_key root@207.180.202.230 \
+  "docker cp /tmp/fichier.py odoo-gm7iq81galclkuzhm0bnwbxu:/mnt/extra-addons/module/controllers/fichier.py"
+
+# 3. Copier aussi dans le volume persistant (pour survie aux redémarrages)
+ssh -i ~/.ssh/contabo_key root@207.180.202.230 \
+  "cp /tmp/fichier.py /var/lib/docker/volumes/gm7iq81galclkuzhm0bnwbxu_odoo-extra-addons/_data/module/controllers/fichier.py"
+
+# 4. Redémarrer Odoo
+ssh -i ~/.ssh/contabo_key root@207.180.202.230 "docker restart odoo-gm7iq81galclkuzhm0bnwbxu"
+```
+
+### REST API Connector
+- **URL base** : `https://odoo.webanalyste.com/api/v1/`
+- **Header auth** : `X-API-Key: <valeur>`
+- **Clé API** : stockée dans Odoo → Paramètres → Clé `rest_api_connector.api_key`
+- **Générateur d'URL** : https://odoo.webanalyste.com/api/v1/doc
+
+### Connexion PostgreSQL (depuis VPS)
+```bash
+ssh -i ~/.ssh/contabo_key root@207.180.202.230 \
+  "docker exec postgresql-gm7iq81galclkuzhm0bnwbxu psql -U fscan -d odoo -c 'SELECT version();'"
+```
+
 ## Backup automatique
 
 ### Architecture
