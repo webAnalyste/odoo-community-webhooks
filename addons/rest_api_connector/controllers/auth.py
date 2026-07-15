@@ -38,6 +38,22 @@ def parse_body():
         return {}
 
 
+def normalize_many2many(val):
+    """Normalise une valeur many2many en commande ORM [(6, 0, [ids])].
+    Accepte : liste [1,2], string "[1,2]", string "1,2", entier 1.
+    """
+    if isinstance(val, list):
+        ids = [int(v) for v in val]
+    elif isinstance(val, str):
+        val = val.strip().strip('[]')
+        ids = [int(v.strip()) for v in val.split(',') if v.strip()]
+    elif isinstance(val, int):
+        ids = [val]
+    else:
+        return None
+    return [(6, 0, ids)]
+
+
 def get_raw_params():
     """Retourne les query params bruts depuis Werkzeug, sans traitement Odoo."""
     return dict(request.httprequest.args)

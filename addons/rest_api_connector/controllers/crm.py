@@ -1,7 +1,7 @@
 from odoo import http
 from odoo.http import request
 
-from .auth import require_api_key, json_response, _error, parse_body, build_domain, get_raw_params
+from .auth import require_api_key, json_response, _error, parse_body, build_domain, get_raw_params, normalize_many2many
 
 CRM_FIELDS = {
     'name': 'char',
@@ -72,8 +72,8 @@ def _serialize(lead):
 
 def _prepare_vals(vals):
     vals.pop('id', None)
-    if 'tag_ids' in vals and isinstance(vals['tag_ids'], list):
-        vals['tag_ids'] = [(6, 0, vals['tag_ids'])]
+    if 'tag_ids' in vals:
+        vals['tag_ids'] = normalize_many2many(vals['tag_ids'])
     return {k: v for k, v in vals.items() if k in WRITABLE_FIELDS}
 
 

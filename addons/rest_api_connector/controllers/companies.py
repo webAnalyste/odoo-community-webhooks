@@ -1,7 +1,7 @@
 from odoo import http
 from odoo.http import request
 
-from .auth import require_api_key, json_response, _error, parse_body, build_domain, get_raw_params
+from .auth import require_api_key, json_response, _error, parse_body, build_domain, get_raw_params, normalize_many2many
 
 COMPANY_FIELDS = {
     'name': 'char',
@@ -96,8 +96,8 @@ class CompaniesController(http.Controller):
         vals['is_company'] = True
         vals.pop('id', None)
         vals = {k: v for k, v in vals.items() if k in WRITABLE_FIELDS + ['is_company']}
-        if 'category_id' in vals and isinstance(vals['category_id'], list):
-            vals['category_id'] = [(6, 0, vals['category_id'])]
+        if 'category_id' in vals:
+            vals['category_id'] = normalize_many2many(vals['category_id'])
         company = request.env['res.partner'].sudo().create(vals)
         return json_response(_serialize(company), status=201)
 
@@ -113,8 +113,8 @@ class CompaniesController(http.Controller):
         vals = {k: v for k, v in vals.items() if k in WRITABLE_FIELDS}
         if not vals:
             return _error(400, 'No valid fields to update')
-        if 'category_id' in vals and isinstance(vals['category_id'], list):
-            vals['category_id'] = [(6, 0, vals['category_id'])]
+        if 'category_id' in vals:
+            vals['category_id'] = normalize_many2many(vals['category_id'])
         company.write(vals)
         return json_response(_serialize(company))
 
