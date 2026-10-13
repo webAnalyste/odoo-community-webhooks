@@ -1,0 +1,130 @@
+# 03_DEPENDENCIES.lock — Versions figées pour l'intégration e-invoicing
+
+**Date de gel** : 2026-10-13 (mis à jour Lot 3F : 2026-10-13)
+**Environnement validé** : staging uniquement (pas encore en production)
+
+---
+
+## Python — packages installés sur staging
+
+| Package | Version figée | Requis par | Notes |
+|---------|--------------|------------|-------|
+| `factur-x` | **7.6** | `account_invoice_en16931` (>=7.5) | Installé dans `/usr/local/lib/python3.12/dist-packages/` |
+| `pyfrctc` | **0.23** | `l10n_fr_einvoicing`, `l10n_fr_ereporting` | Dernière version PyPI au 2026-10-13 |
+| `unidecode` | **1.3.8** | fr-einvoicing | Déjà présent |
+| `packaging` | **26.3** | Odoo (parse dépendances python) | Absent par défaut dans odoo:18 |
+| `openupgradelib` | **3.13.7** | script migration `account_invoice_import` 18.0.2.0.0 | Nouveau |
+| `xlsxwriter` | **3.1.9** | `l10n_fr_account_vat_return` | Déjà présent dans odoo:18 |
+| `account_tax_unece` | **18.0.2.3.0** | `account_invoice_en16931` (champ `unece_vatex_id`) | Mis à jour depuis 18.0.1.1.0 |
+| `account_invoice_import_facturx` | **18.0.1.1.0** | `account_invoice_import` 18.0.2.0.0 (multi_xpath_helper) | Mis à jour depuis 18.0.1.0.0 (source: OCA/edi PR#1426) |
+| `lxml` | **5.2.1** (système) | factur-x, Odoo | Via apt |
+| `python-stdnum` | **2.2** | factur-x 7.6 | Mis à jour depuis 1.19 |
+| `pypdf` | **6.20.1** | factur-x 7.6 | Mis à jour |
+| `iso4217` | **1.16.20260101** | factur-x 7.6 | Nouveau |
+| `dnspython` | **2.9.0** | pyfrctc 0.23 | Nouveau |
+| `requests-oauthlib` | **2.0.0** | pyfrctc 0.23 | Nouveau |
+| `oauthlib` | **4.0.0** | requests-oauthlib | Nouveau |
+
+### Commande de réinstallation
+
+```bash
+docker exec -u root odoo-staging pip install \
+  'factur-x==7.6' \
+  'pyfrctc==0.23' \
+  'packaging==26.3' \
+  'openupgradelib==3.13.7' \
+  unidecode \
+  --break-system-packages
+```
+
+---
+
+## Dépôts Git — SHA figés
+
+### akretion/fr-einvoicing
+
+| Dépôt | Branche | SHA | Date |
+|-------|---------|-----|------|
+| `akretion/fr-einvoicing` | `18.0` | `765b238f92c643c2aa89318bf6d600228bb093f7` | 2026-10-13T10:04:11Z |
+
+### PR OCA encore ouvertes (état au 2026-10-13)
+
+| PR | Dépôt | État | Branche utilisée | SHA HEAD | CI |
+|----|-------|------|-----------------|----------|----|
+| #1426 | OCA/edi | **OPEN** | `akretion/edi:18.0-account_invoice_import-revolution` | `c7a9b12b56d32d7c65d6bd1d5141834886a9412c` | non vérifié |
+| #810 | OCA/l10n-france | **OPEN** | `akretion/l10n-france:18-add-l10n_fr_account_invoice_import` | `c202a40480fa657c296c7ef99503b1da7ccf58ed` | non vérifié |
+| #628 | OCA/l10n-france | **OPEN** | `akretion/l10n-france:18-add-l10n_fr_account_oca` | `a884a82625946a7e2b82b2afd2fa337b1ceba58f` | tests OK (codecov seul en failure — non bloquant) |
+| #740 | OCA/l10n-france | **OPEN** | `akretion/l10n-france:18-mig-vat-v2` | `b0b06b91fc2d1a22a7bcc80dbd5702c72f2a1045` | CI failure (env CI manquant, pas un bug fonctionnel — validé sur staging) |
+
+> **Règle CDC** : PR encore ouverte → utiliser le commit précis validé en staging. Ces SHA sont à re-vérifier avant passage en production.
+>
+> **Note PR #740** : les failures CI upstream (test with Odoo/OCB + pre-commit) proviennent d'une dépendance `l10n_fr_account_oca` (PR #628) non disponible dans l'environnement CI OCA standard, pas d'un défaut fonctionnel. L'installation en staging s'est déroulée sans erreur. Dernier commit upstream : 2026-08-30.
+
+### Autres dépôts OCA clonés
+
+| Dépôt | Branche | SHA | Module extrait |
+|-------|---------|-----|----------------|
+| `OCA/community-data-files` | `18.0` | (depth=1, 2026-10-13) | `account_tax_unece` 18.0.2.3.0 |
+| `OCA/intrastat-extrastat` | `18.0` | `917cea1f86a5e3bcec496f92005db31fbcdfbd73` | `intrastat_base` |
+| `OCA/server-tools` | `18.0` | `126afd2a62ec528386285aa753b24c15277d1f15` | `base_view_inheritance_extension` |
+| `OCA/web` | `18.0` | `c3120b0cf89a7b90ada70fd944c22b9b74fbd8a4` | (cloné, non utilisé) |
+| `OCA/sale-workflow` | `18.0` | `e0694c7bd12d1d286b2a8ebe8e8f0130d1290942` | `sale_commercial_partner` |
+| `akretion/l10n-france` (PR #810) | `18-add-l10n_fr_account_invoice_import` | `c202a40480fa657c296c7ef99503b1da7ccf58ed` | `l10n_fr_siret`, `l10n_fr_siret_account`, `l10n_fr_account_invoice_import*` |
+| `akretion/l10n-france` (PR #628) | `18-add-l10n_fr_account_oca` | `a884a82625946a7e2b82b2afd2fa337b1ceba58f` | `l10n_fr_account_oca` |
+| `akretion/l10n-france` (PR #740) | `18-mig-vat-v2` | `b0b06b91fc2d1a22a7bcc80dbd5702c72f2a1045` | `l10n_fr_account_vat_return` |
+
+---
+
+## Modules installés en Bloc A (staging, 2026-10-13)
+
+| Module | Source | État |
+|--------|--------|------|
+| `base_view_inheritance_extension` | OCA/server-tools 18.0 | installé |
+| `intrastat_base` | OCA/intrastat-extrastat 18.0 | installé |
+| `l10n_fr_siret` | akretion/l10n-france | installé |
+| `l10n_fr_siret_account` | akretion/l10n-france | installé |
+| `account_invoice_en16931` | akretion/fr-einvoicing 18.0 | installé |
+| `l10n_fr_account_invoice_en16931` | akretion/fr-einvoicing 18.0 | installé |
+
+## Modules désinstallés sur staging (conflits avec Akretion)
+
+| Module | Raison | Statut |
+|--------|--------|--------|
+| `account_invoice_facturx` | Incompatible avec `account_invoice_en16931` (même fonctionnalité) | désinstallé staging |
+| `account_einvoice_generate` | Incompatible avec `account_invoice_en16931` | désinstallé staging |
+
+> **IMPORTANT** : Ces modules sont encore installés en **production**. La désinstallation en production sera à prévoir lors du passage en prod, après validation complète du staging.
+
+---
+
+## Modules installés — Blocs B, C, D, F (staging, 2026-10-13)
+
+| Module | Source | Version | État |
+|--------|--------|---------|------|
+| `l10n_fr_einvoicing` | akretion/fr-einvoicing 18.0 | 18.0.1.3.0 | installé |
+| `account_invoice_import` | akretion/edi PR#1426 | 18.0.2.0.0 | installé |
+| `l10n_fr_account_invoice_import` | akretion/l10n-france PR#810 | 18.0.1.0.0 | installé |
+| `l10n_fr_einvoicing_import` | akretion/fr-einvoicing 18.0 | 18.0.1.0.0 | installé |
+| `sale_commercial_partner` | OCA/sale-workflow 18.0 | — | installé |
+| `l10n_fr_einvoicing_sale` | akretion/fr-einvoicing 18.0 | 18.0.1.0.0 | installé |
+| `l10n_fr_einvoicing_purchase` | akretion/fr-einvoicing 18.0 | 18.0.1.0.0 | installé |
+| `l10n_fr_account_oca` | akretion/l10n-france PR#628 | 18.0.1.0.0 | installé |
+| `l10n_fr_account_vat_return` | akretion/l10n-france PR#740 | 18.0.2.0.1 | installé |
+| `l10n_fr_ereporting` | akretion/fr-einvoicing 18.0 | 18.0.1.0.1 | installé |
+
+## Modules NON installés (optionnels)
+
+| Module | Raison |
+|--------|--------|
+| `l10n_fr_einvoicing_payment_batch_oca` | Dépend de `account_payment_batch_oca` (non disponible) — optionnel |
+| `l10n_fr_account_vat_return_teledec` | Télédéclaration DGFiP — non requis pour l'e-invoicing |
+| `l10n_fr_chorus_en16931` | Chorus Pro — hors périmètre (secteur public) |
+
+## Coexistence des 3 branches akretion/l10n-france
+
+Les PR #628, #740 et #810 modifient des répertoires **totalement disjoints** :
+- PR #628 : `l10n_fr_account_oca/` uniquement
+- PR #740 : `l10n_fr_account_vat_return/` uniquement
+- PR #810 : `l10n_fr_account_invoice_import/` + `l10n_fr_account_invoice_import_facturx/`
+
+**Aucun conflit de fichiers** — coexistence possible par copie indépendante de chaque répertoire.
